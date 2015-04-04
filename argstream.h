@@ -80,6 +80,24 @@ namespace argstream
 		typedef std::basic_ostringstream<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> O;
 	};
 
+	template<typename CHARTYPE>
+	struct DEFAULT
+	{
+		static CHARTYPE GetHelpShortName() { return 'h'; }
+		static CHARTYPE* GetHelpLongName() { return NULL; }
+		static CHARTYPE* GetHelpDesc() { return NULL; }
+	};
+
+	template<> char* DEFAULT<char>::GetHelpLongName() { return "help"; }
+	template<> wchar_t* DEFAULT<wchar_t>::GetHelpLongName() { return L"help"; }
+
+	template<>char* DEFAULT<char>::GetHelpDesc() { return "Display this help"; }
+	template<>wchar_t* DEFAULT<wchar_t>::GetHelpDesc() { return L"Display this help"; }
+
+
+
+
+
 	template<typename CHARTYPE> class argstream;
 
 	template<typename CHARTYPE, typename T>	class ValueHolder;
@@ -172,9 +190,9 @@ namespace argstream
 			const CHARTYPE* desc);
 
 		template<typename CHARTYPE>
-		friend OptionHolder<CHARTYPE> help(CHARTYPE s, //default value: 0
-			const CHARTYPE* l, //default value: NULL
-			const CHARTYPE* desc); //default value: NULL
+		friend OptionHolder<CHARTYPE> help(CHARTYPE s,
+			const CHARTYPE* l,
+			const CHARTYPE* desc);
 	private:
 		typename TSTR<CHARTYPE>::type shortName_;
 		typename TSTR<CHARTYPE>::type longName_;
@@ -206,17 +224,16 @@ namespace argstream
 	{
 		return OptionHolder<CHARTYPE>(l, b, desc);
 	}
+	
 	template<typename CHARTYPE>
 	inline OptionHolder<CHARTYPE> help(
-		CHARTYPE s = 0,
-		const CHARTYPE* l = NULL,
-		const CHARTYPE* desc = NULL)
+		CHARTYPE s = DEFAULT<CHARTYPE>::GetHelpShortName(),
+		const CHARTYPE* l = DEFAULT<CHARTYPE>::GetHelpLongName(),
+		const CHARTYPE* desc = DEFAULT<CHARTYPE>::GetHelpDesc())
 	{
-		CHARTYPE sDefault = 'h';
-		typename TSTR<CHARTYPE>::type lDefault = TSTR<CHARTYPE>::ToString("help");
-		typename TSTR<CHARTYPE>::type descDefault = TSTR<CHARTYPE>::ToString("Display this help");
-		return OptionHolder<CHARTYPE>(s ? s : sDefault, l ? l : lDefault.c_str(), desc ? desc : descDefault.c_str());
+		return OptionHolder<CHARTYPE>(s, l, desc);
 	}
+
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Interface of ValuesHolder
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -645,7 +662,7 @@ namespace argstream
 			iter = argHelps_.begin();iter != argHelps_.end();++iter)
 		{
 			os << '\t' << iter->first << TSTR<CHARTYPE>::type(lmax-iter->first.size(),' ')
-				<<" : "<<iter->second<<'\n';
+				<< TSTR<CHARTYPE>::ToString(" : ") << iter->second << '\n';
 		}
 		return os.str();
 	}
@@ -754,8 +771,8 @@ namespace argstream
 			{
 				s.isOk_ = false;
 				typename TSTRSTREAM<CHARTYPE>::O os;
-				os<<"No value following switch "<<iter->first //TODO
-					<<" on command line"; //TODO
+				os	<< TSTR<CHARTYPE>::ToString("No value following switch ") << iter->first
+					<< TSTR<CHARTYPE>::ToString(" on command line");
 				s.errors_.push_back(os.str());
 			}
 		}
@@ -765,14 +782,14 @@ namespace argstream
 			{
 				s.isOk_ = false;
 				TSTRSTREAM<CHARTYPE>::O os;
-				os<<"Mandatory parameter "; //TODO
+				os<< TSTR<CHARTYPE>::ToString("Mandatory parameter ");
 				if (!v.shortName_.empty()) os<<'-'<<v.shortName_;
 				if (!v.longName_.empty())
 				{
 					if (!v.shortName_.empty()) os<<'/';
-					os<<"--"<<v.longName_;
+					os << TSTR<CHARTYPE>::ToString("--") << v.longName_;
 				}
-				os<<" missing";
+				os<< TSTR<CHARTYPE>::ToString(" missing");
 				s.errors_.push_back(os.str());
 			}
 		}
