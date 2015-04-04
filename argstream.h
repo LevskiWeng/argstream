@@ -19,8 +19,7 @@
 #ifndef ARGSTREAM_H
 #define ARGSTREAM_H
 
-#include <Windows.h>
-
+#include <clocale>
 #include <string>
 #include <list>
 #include <deque>
@@ -31,44 +30,61 @@
 
 namespace argstream
 {
+	const size_t MAXPATH=260;
 	template<typename CHARTYPE>
 	struct TSTR
 	{
 		typedef std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> type;
 
-		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(char* s);
-		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(wchar_t* s);
+		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(char* s, char*locale = "zh-CN");
+		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(wchar_t* s, char* locale = "zh-CN");
 		
 	};
 
 	template<>
-	std::wstring TSTR<wchar_t>::ToString(char* s)
+	std::wstring TSTR<wchar_t>::ToString(char* s, char* locale)
 	{
-		wchar_t buf[MAX_PATH+1] = {0};
-
-		MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, s, strlen(s), buf, sizeof(buf)/sizeof(buf[0]));
+		wchar_t buf[MAXPATH+1] = {0};
+#ifdef WIN32
+		size_t returnSize = 0;
+#endif
+		setlocale(LC_CTYPE, locale);
+#ifdef WIN32
+		mbstowcs_s(&returnSize, buf, s, strlen(s));
+#else
+		mbstowcs(buf, s, sizeof(buf)/sizeof(buf[0]));
+#endif
+		setlocale(LC_CTYPE, "");
 
 		return std::wstring(buf);
 	}
 
 	template<>
-	std::wstring TSTR<wchar_t>::ToString(wchar_t* s)
+	std::wstring TSTR<wchar_t>::ToString(wchar_t* s, char* locale)
 	{
 		return std::wstring(s);
 	}
 
 	template<>
-	std::string TSTR<char>::ToString(char* s)
+	std::string TSTR<char>::ToString(char* s, char* locale)
 	{
 		return std::string(s);
 	}
 
 	template<>
-	std::string TSTR<char>::ToString(wchar_t* s)
+	std::string TSTR<char>::ToString(wchar_t* s, char* locale)
 	{
-		char buf[MAX_PATH+1] = {0};
-
-		WideCharToMultiByte(CP_ACP, MB_PRECOMPOSED, s, wcslen(s), buf, sizeof(buf)/sizeof(buf[0]), NULL, NULL);
+		char buf[MAXPATH+1] = {0};
+#ifdef WIN32
+		size_t returnSize = 0;	
+#endif
+		setlocale(LC_CTYPE, locale);
+#ifdef WIN32
+		wcstombs_s(&returnSize, buf, sizeof(buf)/sizeof(buf[0]), s, wcslen(s));
+#else
+		wcstombs(buf, s, sizeof(buf)/sizeof(buf[0]));
+#endif
+		setlocale(LC_CTYPE, "");
 
 		return std::string(buf);
 	}
