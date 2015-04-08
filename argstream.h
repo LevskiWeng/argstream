@@ -130,12 +130,14 @@ namespace argstream
 		typedef std::basic_ostringstream<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> O;
 	};
 
+	// You could change the following default values as you wish :-)
 	template<typename CHARTYPE>
 	struct DEFAULT
 	{
 		static CHARTYPE GetHelpShortName() { return 0; }
 		static CHARTYPE* GetHelpLongName() { return NULL; }
 		static CHARTYPE* GetHelpDesc() { return NULL; }
+		static CHARTYPE* GetCopyright() { return NULL; }
 	};
 	template<> char DEFAULT<char>::GetHelpShortName() { return 'h'; }
 	template<> wchar_t DEFAULT<wchar_t>::GetHelpShortName() { return L'h'; }
@@ -146,9 +148,8 @@ namespace argstream
 	template<>char* DEFAULT<char>::GetHelpDesc() { return "Display this help"; }
 	template<>wchar_t* DEFAULT<wchar_t>::GetHelpDesc() { return L"Display this help"; }
 
-
-
-
+	template<>char* DEFAULT<char>::GetCopyright() { return "CopyRight (c) 2015. Levski Weng <levskiweng@gmail.com>. All rights reserved."; }
+	template<>wchar_t* DEFAULT<wchar_t>::GetCopyright() { return L"CopyRight (c) 2015. Levski Weng <levskiweng@gmail.com>. All rights reserved."; }
 
 	template<typename CHARTYPE> class argstream;
 
@@ -701,7 +702,7 @@ namespace argstream
 	inline typename TSTR<CHARTYPE>::type argstream<CHARTYPE>::usage() const
 	{
 		typename TSTRSTREAM<CHARTYPE>::O os;
-		os<<TSTR<CHARTYPE>::ToString("usage: ")<<progName_<<cmdLine_<<'\n';
+		os<<DEFAULT<CHARTYPE>::GetCopyright()<<std::endl<<std::endl<<TSTR<CHARTYPE>::ToString("usage: ")<<progName_<<cmdLine_<<std::endl;
 		unsigned int lmax = 0;
 		for (std::deque<help_entry>::const_iterator
 			iter = argHelps_.begin();iter != argHelps_.end();++iter)
@@ -712,7 +713,7 @@ namespace argstream
 			iter = argHelps_.begin();iter != argHelps_.end();++iter)
 		{
 			os << '\t' << iter->first << TSTR<CHARTYPE>::type(lmax-iter->first.size(),' ')
-				<< TSTR<CHARTYPE>::ToString(" : ") << iter->second << '\n';
+				<< TSTR<CHARTYPE>::ToString(" : ") << iter->second << std::endl;
 		}
 		return os.str();
 	}
