@@ -38,6 +38,8 @@ namespace argstream
 
 		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(char* s, char*locale = "zh-CN");
 		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(wchar_t* s, char* locale = "zh-CN");
+		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(char s, char*locale = "zh-CN");
+		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(wchar_t s, char*locale = "zh-CN");
 		
 	};
 
@@ -89,6 +91,38 @@ namespace argstream
 		return std::string(buf);
 	}
 
+	template<>
+	std::string TSTR<char>::ToString(char s, char* locale)
+	{
+		char buf[2] = {0};
+		buf[0] = s;
+		return std::string(buf);	
+	}
+
+	template<>
+	std::wstring TSTR<wchar_t>::ToString(char s, char* locale)
+	{
+		wchar_t buf[2] = {0};
+		buf[0] = static_cast<wchar_t>(s);
+		return std::wstring(buf);	
+	}
+
+	template<>
+	std::string TSTR<char>::ToString(wchar_t s, char* locale)
+	{
+		char buf[2] = {0};
+		buf[0] = static_cast<char>(s);
+
+		return std::string(buf);	
+	}
+	template<>
+	std::wstring TSTR<wchar_t>::ToString(wchar_t s, char* locale)
+	{
+		wchar_t buf[2] = {0};
+		buf[0] = s;
+		return std::wstring(buf);	
+	}
+
 	template<typename CHARTYPE>
 	struct TSTRSTREAM
 	{
@@ -99,10 +133,12 @@ namespace argstream
 	template<typename CHARTYPE>
 	struct DEFAULT
 	{
-		static CHARTYPE GetHelpShortName() { return 'h'; }
+		static CHARTYPE GetHelpShortName() { return 0; }
 		static CHARTYPE* GetHelpLongName() { return NULL; }
 		static CHARTYPE* GetHelpDesc() { return NULL; }
 	};
+	template<> char DEFAULT<char>::GetHelpShortName() { return 'h'; }
+	template<> wchar_t DEFAULT<wchar_t>::GetHelpShortName() { return L'h'; }
 
 	template<> char* DEFAULT<char>::GetHelpLongName() { return "help"; }
 	template<> wchar_t* DEFAULT<wchar_t>::GetHelpLongName() { return L"help"; }
@@ -206,9 +242,7 @@ namespace argstream
 			const CHARTYPE* desc);
 
 		template<typename CHARTYPE>
-		friend OptionHolder<CHARTYPE> help(CHARTYPE s,
-			const CHARTYPE* l,
-			const CHARTYPE* desc);
+		friend OptionHolder<CHARTYPE> help();
 	private:
 		typename TSTR<CHARTYPE>::type shortName_;
 		typename TSTR<CHARTYPE>::type longName_;
@@ -242,12 +276,9 @@ namespace argstream
 	}
 	
 	template<typename CHARTYPE>
-	inline OptionHolder<CHARTYPE> help(
-		CHARTYPE s = DEFAULT<CHARTYPE>::GetHelpShortName(),
-		const CHARTYPE* l = DEFAULT<CHARTYPE>::GetHelpLongName(),
-		const CHARTYPE* desc = DEFAULT<CHARTYPE>::GetHelpDesc())
+	inline OptionHolder<CHARTYPE> help()
 	{
-		return OptionHolder<CHARTYPE>(s, l, desc);
+		return OptionHolder<CHARTYPE>(DEFAULT<CHARTYPE>::GetHelpShortName(), DEFAULT<CHARTYPE>::GetHelpLongName(), DEFAULT<CHARTYPE>::GetHelpDesc());
 	}
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -841,6 +872,11 @@ namespace argstream
 			c += TSTR<CHARTYPE>::ToString("]");
 			s.cmdLine_ = c+s.cmdLine_;
 		}
+		if (v.name() == TSTR<CHARTYPE>::ToString("-") + TSTR<CHARTYPE>::ToString(DEFAULT<CHARTYPE>::GetHelpShortName()) ||
+			v.name() == TSTR<CHARTYPE>::ToString("--") + TSTR<CHARTYPE>::ToString(DEFAULT<CHARTYPE>::GetHelpLongName()))	
+		{
+			s.helpRequested_ = true;
+		}
 		std::map<TSTR<CHARTYPE>::type, argstream<CHARTYPE>::value_iterator>::iterator iter =
 			s.options_.find(v.shortName_);
 		if (iter == s.options_.end())
@@ -855,10 +891,6 @@ namespace argstream
 			{
 				*(v.value_) = true;
 			}
-			else
-			{
-				s.helpRequested_ = true;
-			}
 			// The option only is removed
 			s.options_.erase(iter);
 		}
@@ -867,10 +899,6 @@ namespace argstream
 			if (v.value_ != NULL)
 			{
 				*(v.value_) = false;
-			}
-			else
-			{
-				s.helpRequested_ = false;
 			}
 		}
 		return s;
