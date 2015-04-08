@@ -702,7 +702,7 @@ namespace argstream
 	inline typename TSTR<CHARTYPE>::type argstream<CHARTYPE>::usage() const
 	{
 		typename TSTRSTREAM<CHARTYPE>::O os;
-		os<<DEFAULT<CHARTYPE>::GetCopyright()<<std::endl<<std::endl<<TSTR<CHARTYPE>::ToString("usage: ")<<progName_<<cmdLine_<<std::endl;
+		os<<DEFAULT<CHARTYPE>::GetCopyright()<<std::endl<<std::endl<<TSTR<CHARTYPE>::ToString("Usage: ")<<progName_<<cmdLine_<<std::endl;
 		unsigned int lmax = 0;
 		for (std::deque<help_entry>::const_iterator
 			iter = argHelps_.begin();iter != argHelps_.end();++iter)
