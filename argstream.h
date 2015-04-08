@@ -268,8 +268,8 @@ namespace argstream
 	private:
 		mutable O   value_;
 		typename TSTR<CHARTYPE>::type description_;
-		int         len_;
-		_TCHAR        letter_;
+		int len_;
+		CHARTYPE letter_;
 	};
 	template<typename CHARTYPE, typename T, typename O>
 	inline ValuesHolder<CHARTYPE, T, O>
@@ -412,7 +412,7 @@ namespace argstream
 		}
 		else
 		{
-			os<<_T("(default=")<<initialValue_<<_T(")");
+			os<<TSTR<CHARTYPE>::ToString("(default=")<<initialValue_<<TSTR<CHARTYPE>::ToString(")");
 		}
 		return os.str();
 	}
