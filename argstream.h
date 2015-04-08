@@ -541,10 +541,13 @@ namespace argstream
 	//************************************************************
 	template<typename CHARTYPE>
 	inline argstream<CHARTYPE>::argstream(int argc,CHARTYPE** argv)
-		: progName_(argv[0]),
+		: progName_(),
 		minusActive_(true),
 		isOk_(true)
 	{
+		typename TSTR<CHARTYPE>::type argv0(argv[0]);
+		size_t found = argv0.find_last_of(TSTR<CHARTYPE>::ToString("/\\"));
+		progName_ = argv0.substr(found+1);
 		parse(argc,argv);
 	}
 
