@@ -62,13 +62,13 @@ namespace argstream
 	}
 
 	template<>
-	std::wstring TSTR<wchar_t>::ToString(wchar_t* s, char* locale)
+	std::wstring TSTR<wchar_t>::ToString(wchar_t* s, char* /*locale*/)
 	{
 		return std::wstring(s);
 	}
 
 	template<>
-	std::string TSTR<char>::ToString(char* s, char* locale)
+	std::string TSTR<char>::ToString(char* s, char* /*locale*/)
 	{
 		return std::string(s);
 	}
@@ -92,7 +92,7 @@ namespace argstream
 	}
 
 	template<>
-	std::string TSTR<char>::ToString(char s, char* locale)
+	std::string TSTR<char>::ToString(char s, char* /*locale*/)
 	{
 		char buf[2] = {0};
 		buf[0] = s;
@@ -100,7 +100,7 @@ namespace argstream
 	}
 
 	template<>
-	std::wstring TSTR<wchar_t>::ToString(char s, char* locale)
+	std::wstring TSTR<wchar_t>::ToString(char s, char* /*locale*/)
 	{
 		wchar_t buf[2] = {0};
 		buf[0] = static_cast<wchar_t>(s);
@@ -108,7 +108,7 @@ namespace argstream
 	}
 
 	template<>
-	std::string TSTR<char>::ToString(wchar_t s, char* locale)
+	std::string TSTR<char>::ToString(wchar_t s, char* /*locale*/)
 	{
 		char buf[2] = {0};
 		buf[0] = static_cast<char>(s);
@@ -116,7 +116,7 @@ namespace argstream
 		return std::string(buf);	
 	}
 	template<>
-	std::wstring TSTR<wchar_t>::ToString(wchar_t s, char* locale)
+	std::wstring TSTR<wchar_t>::ToString(wchar_t s, char* /*locale*/)
 	{
 		wchar_t buf[2] = {0};
 		buf[0] = s;
