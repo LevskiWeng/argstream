@@ -30,21 +30,21 @@
 
 namespace argstream
 {
-	const size_t MAXPATH=260;
+	const size_t MAXPATH=1024;
 	template<typename CHARTYPE>
 	struct TSTR
 	{
 		typedef std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> type;
 
-		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(char* s, char*locale = "zh-CN");
-		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(wchar_t* s, char* locale = "zh-CN");
+		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(const char* s, char*locale = "zh-CN");
+		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(const wchar_t* s, char* locale = "zh-CN");
 		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(char s, char*locale = "zh-CN");
 		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(wchar_t s, char*locale = "zh-CN");
 		
 	};
 
 	template<>
-	std::wstring TSTR<wchar_t>::ToString(char* s, char* locale)
+	std::wstring TSTR<wchar_t>::ToString(const char* s, char* locale)
 	{
 		wchar_t buf[MAXPATH+1] = {0};
 #ifdef WIN32
@@ -62,19 +62,19 @@ namespace argstream
 	}
 
 	template<>
-	std::wstring TSTR<wchar_t>::ToString(wchar_t* s, char* /*locale*/)
+	std::wstring TSTR<wchar_t>::ToString(const wchar_t* s, char* /*locale*/)
 	{
 		return std::wstring(s);
 	}
 
 	template<>
-	std::string TSTR<char>::ToString(char* s, char* /*locale*/)
+	std::string TSTR<char>::ToString(const char* s, char* /*locale*/)
 	{
 		return std::string(s);
 	}
 
 	template<>
-	std::string TSTR<char>::ToString(wchar_t* s, char* locale)
+	std::string TSTR<char>::ToString(const wchar_t* s, char* locale)
 	{
 		char buf[MAXPATH+1] = {0};
 #ifdef WIN32
