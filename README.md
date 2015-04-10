@@ -8,7 +8,7 @@ The purpose of this mod of [argstream](http://maverick.inria.fr/Membres/Xavier.D
 int _tmain(int argc, _TCHAR* argv[])
 {
 	argstream::argstream<_TCHAR> as(argc, argv);
-	argstream::TSTR<_TCHAR>::type filePath(_T("C:\default_file.name"));
+	argstream::TSTR<_TCHAR>::type filePath(_T("C:\\default_file.name"));
 	int size;
 	as >> argstream::parameter(
 		_T('f'), //short parameter name
