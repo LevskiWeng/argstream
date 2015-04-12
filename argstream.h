@@ -544,7 +544,8 @@ namespace argstream
 	inline argstream<CHARTYPE>::argstream(int argc,CHARTYPE** argv)
 		: progName_(),
 		minusActive_(true),
-		isOk_(true)
+		isOk_(true),
+		helpRequested_(false)
 	{
 		typename TSTR<CHARTYPE>::type argv0(argv[0]);
 		size_t found = argv0.find_last_of(TSTR<CHARTYPE>::ToString("/\\"));
@@ -556,7 +557,8 @@ namespace argstream
 	inline argstream<CHARTYPE>::argstream(const CHARTYPE* c)
 		: progName_(TSTR<CHARTYPE>::ToString("")),
 		minusActive_(true),
-		isOk_(true)
+		isOk_(true),
+		helpRequested_(false)
 	{
 		typename TSTR<CHARTYPE>::type s(c);
 		// Build argc, argv from s. We must add a dummy first element for
