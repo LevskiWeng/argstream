@@ -36,10 +36,10 @@ namespace argstream
 	{
 		typedef std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> type;
 
-		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(const char* s, char*locale = "zh-CN");
-		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(const wchar_t* s, char* locale = "zh-CN");
-		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(char s, char*locale = "zh-CN");
-		static std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(wchar_t s, char*locale = "zh-CN");
+		static inline std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(const char* s, char*locale = "zh-CN");
+		static inline std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(const wchar_t* s, char* locale = "zh-CN");
+		static inline std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(char s, char*locale = "zh-CN");
+		static inline std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(wchar_t s, char*locale = "zh-CN");
 		
 	};
 
@@ -134,10 +134,10 @@ namespace argstream
 	template<typename CHARTYPE>
 	struct DEFAULT
 	{
-		static CHARTYPE GetHelpShortName() { return 0; }
-		static CHARTYPE* GetHelpLongName() { return NULL; }
-		static CHARTYPE* GetHelpDesc() { return NULL; }
-		static CHARTYPE* GetCopyright() { return NULL; }
+		static inline CHARTYPE GetHelpShortName() { return 0; }
+		static inline CHARTYPE* GetHelpLongName() { return NULL; }
+		static inline CHARTYPE* GetHelpDesc() { return NULL; }
+		static inline CHARTYPE* GetCopyright() { return NULL; }
 	};
 	template<> char DEFAULT<char>::GetHelpShortName() { return 'h'; }
 	template<> wchar_t DEFAULT<wchar_t>::GetHelpShortName() { return L'h'; }
