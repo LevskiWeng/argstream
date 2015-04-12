@@ -878,8 +878,9 @@ namespace argstream
 			c += TSTR<CHARTYPE>::ToString("]");
 			s.cmdLine_ = c+s.cmdLine_;
 		}
-		if (v.name() == TSTR<CHARTYPE>::ToString("-") + TSTR<CHARTYPE>::ToString(DEFAULT<CHARTYPE>::GetHelpShortName()) ||
-			v.name() == TSTR<CHARTYPE>::ToString("--") + TSTR<CHARTYPE>::ToString(DEFAULT<CHARTYPE>::GetHelpLongName()))	
+
+		if (s.options_.find(TSTR<CHARTYPE>::ToString(DEFAULT<CHARTYPE>::GetHelpShortName())) != s.options_.end() ||
+			s.options_.find(DEFAULT<CHARTYPE>::GetHelpLongName()) != s.options_.end() )
 		{
 			s.helpRequested_ = true;
 		}
