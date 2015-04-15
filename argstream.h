@@ -216,6 +216,27 @@ namespace argstream
 	{
 		return ValueHolder<CHARTYPE, T>(l, b, desc, mandatory);
 	}
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Interface of ExampleHolder
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template <typename CHARTYPE>
+	class ExampleHolder
+	{
+	public:
+		inline ExampleHolder(const CHARTYPE* cmdline, const CHARTYPE* desc)
+			:cmdline_(cmdline),
+			description_(desc)
+		{
+		};
+		typename TSTR<CHARTYPE>::type cmdline() const { return cmdline_; };
+		typename TSTR<CHARTYPE>::type description() const { return description_; };
+		template<typename CHARTYPE>
+		friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s, const ExampleHolder<CHARTYPE>& e);
+	private:
+		typename TSTR<CHARTYPE>::type cmdline_;
+		typename TSTR<CHARTYPE>::type description_;
+	};
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Interface of OptionHolder
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -244,6 +265,7 @@ namespace argstream
 
 		template<typename CHARTYPE>
 		friend OptionHolder<CHARTYPE> help();
+
 	private:
 		typename TSTR<CHARTYPE>::type shortName_;
 		typename TSTR<CHARTYPE>::type longName_;
@@ -280,6 +302,12 @@ namespace argstream
 	inline OptionHolder<CHARTYPE> help()
 	{
 		return OptionHolder<CHARTYPE>(DEFAULT<CHARTYPE>::GetHelpShortName(), DEFAULT<CHARTYPE>::GetHelpLongName(), DEFAULT<CHARTYPE>::GetHelpDesc());
+	}
+
+	template<typename CHARTYPE>
+	inline ExampleHolder<CHARTYPE> example(const CHARTYPE* cmdline, const CHARTYPE* desc)
+	{
+		return ExampleHolder<CHARTYPE>(cmdline, desc);
 	}
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -359,6 +387,7 @@ namespace argstream
 		template<typename CHARTYPE, typename T> friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ValueHolder<CHARTYPE, T>& v);
 		template<typename CHARTYPE> friend inline argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const OptionHolder<CHARTYPE>& v);
 		template<typename CHARTYPE, typename T, typename O> friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ValuesHolder<CHARTYPE, T,O>& v);
+		template<typename CHARTYPE> friend inline argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ExampleHolder<CHARTYPE>& v);
 
 		inline bool helpRequested() const;
 		inline bool isOk() const;
@@ -371,14 +400,16 @@ namespace argstream
 	private:
 		typedef typename std::list<typename TSTR<CHARTYPE>::type>::iterator value_iterator;
 		typedef typename std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type> help_entry;
+		typedef typename std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type> example_entry;
 		typename TSTR<CHARTYPE>::type progName_;
 		std::map<typename TSTR<CHARTYPE>::type, value_iterator> options_;
 		std::list<typename TSTR<CHARTYPE>::type> values_;
 		bool minusActive_;
 		bool isOk_;
 		std::deque<std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type>> argHelps_;
+		std::deque<std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type>> argExamples_;
 		typename TSTR<CHARTYPE>::type cmdLine_;
-		std::deque<typename TSTR<CHARTYPE>::type> errors_; 
+		std::deque<typename TSTR<CHARTYPE>::type> errors_;
 		bool helpRequested_;
 	};
 	//************************************************************
@@ -717,6 +748,23 @@ namespace argstream
 			os << '\t' << iter->first << TSTR<CHARTYPE>::type(lmax-iter->first.size(),' ')
 				<< TSTR<CHARTYPE>::ToString(" : ") << iter->second << std::endl;
 		}
+		
+		// Append the examples
+		if (argExamples_.size())
+		{
+			int i = 1;
+			for (auto example:argExamples_)
+			{
+				os << endl 
+					<< TSTR<CHARTYPE>::ToString("----------") << endl 
+					<< TSTR<CHARTYPE>::ToString("Example ") << i++ << endl
+					<< TSTR<CHARTYPE>::ToString("----------") << endl
+					<< TSTR<CHARTYPE>::ToString("Command: ") << endl
+					<< TSTR<CHARTYPE>::ToString("\t") << example.first << endl << endl
+					<< TSTR<CHARTYPE>::ToString("Description:") << endl
+					<< TSTR<CHARTYPE>::ToString("\t") << example.second << endl;
+			}
+		}
 		return os.str();
 	}
 
@@ -846,6 +894,13 @@ namespace argstream
 				s.errors_.push_back(os.str());
 			}
 		}
+		return s;
+	}
+
+	template<typename CHARTYPE>
+	inline argstream<CHARTYPE>&	operator>>(argstream<CHARTYPE>& s,const ExampleHolder<CHARTYPE>& v)
+	{
+		s.argExamples_.push_back(argstream<CHARTYPE>::example_entry(v.cmdline(), v.description()));
 		return s;
 	}
 

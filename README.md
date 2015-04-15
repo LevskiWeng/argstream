@@ -22,6 +22,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		_T("File size "),
 		true); //the parameter is mandatory
 	as >> argstream::help<_TCHAR>(); //Add help parameter
+	as >> argstream::example(_T("example command line"), _T("Description of the example"));
+	as >> argstream::example(_T("example command line 2"), _T("Description of the example 2"));
 #ifdef UNICODE
 	std::wcout << as.usage();
 #else
