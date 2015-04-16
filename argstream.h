@@ -154,6 +154,7 @@ namespace argstream
 
 	template<typename CHARTYPE> class argstream;
 
+	template<typename CHARTYPE, typename T> struct description_policy;
 	template<typename CHARTYPE, typename T>	class ValueHolder;
 	template<typename CHARTYPE, typename T, typename O> class ValuesHolder;
 	template<typename CHARTYPE, typename T> argstream<CHARTYPE>& operator>> (argstream<CHARTYPE>&, const ValueHolder<CHARTYPE, T>&);
@@ -179,6 +180,7 @@ namespace argstream
 			const CHARTYPE* desc,
 			bool mandatory);
 		friend argstream<CHARTYPE>& operator>><CHARTYPE, T> (argstream<CHARTYPE>& s,const ValueHolder<CHARTYPE, T>& v);
+		template<typename CHARTYPE, typename T> friend struct description_policy;
 		typename TSTR<CHARTYPE>::type name() const;
 		typename TSTR<CHARTYPE>::type description() const;
 	private:
@@ -310,7 +312,40 @@ namespace argstream
 	{
 		return ExampleHolder<CHARTYPE>(cmdline, desc);
 	}
+	
+	template<typename CHARTYPE, typename T>
+	struct description_policy
+	{
+		static inline typename TSTR<CHARTYPE>::type execute(const ValueHolder<CHARTYPE, T>* v) 
+		{
+			typename TSTRSTREAM<CHARTYPE>::O os;
+			os<<v->description_;
+			if (v->mandatory_)
+			{
+				os<<TSTR<CHARTYPE>::ToString("(mandatory)");
+			}
+			else
+			{
+				os<<TSTR<CHARTYPE>::ToString("(default=")<<v->initialValue_<<TSTR<CHARTYPE>::ToString(")");
+			}
+			return os.str();
+		}
+	};
 
+	template<typename CHARTYPE>
+	struct description_policy<CHARTYPE, bool> 
+	{
+		static inline typename TSTR<CHARTYPE>::type execute(const ValueHolder<CHARTYPE, bool>* v) 
+		{
+			typename TSTRSTREAM<CHARTYPE>::O os;
+			os<<v->description_;
+			if (v->mandatory_)
+			{
+				os<<TSTR<CHARTYPE>::ToString("(mandatory)");
+			}
+			return os.str();
+		}
+	};
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Interface of ValuesHolder
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -473,20 +508,7 @@ namespace argstream
 	template<typename CHARTYPE, typename T>
 	inline typename TSTR<CHARTYPE>::type ValueHolder<CHARTYPE, T>::description() const
 	{
-		typename TSTRSTREAM<CHARTYPE>::O os;
-		os<<description_;
-		if (mandatory_)
-		{
-			os<<TSTR<CHARTYPE>::ToString("(mandatory)");
-		}
-		else
-		{
-			if (!std::is_same<T, bool>::value)
-			{
-				os<<TSTR<CHARTYPE>::ToString("(default=")<<initialValue_<<TSTR<CHARTYPE>::ToString(")");
-			}
-		}
-		return os.str();
+		return description_policy<CHARTYPE, T>::execute(this);
 	}
 	
 	//************************************************************
@@ -824,10 +846,7 @@ namespace argstream
 				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" --");
 				s.cmdLine_ += v.longName_;
 			}
-			if (!std::is_same<T, bool>::value)
-			{
-				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" value");
-			}
+			s.cmdLine_ += TSTR<CHARTYPE>::ToString(" value");
 		}
 		else
 		{
@@ -841,15 +860,7 @@ namespace argstream
 				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" [--");
 				s.cmdLine_ += v.longName_;
 			}
-			if (!std::is_same<T, bool>::value)
-			{
-				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" value]");
-			}
-			else
-			{
-				s.cmdLine_ += TSTR<CHARTYPE>::ToString("]");
-			}
-
+			s.cmdLine_ += TSTR<CHARTYPE>::ToString(" value]");
 		}
 		std::map<typename TSTR<CHARTYPE>::type, typename argstream<CHARTYPE>::value_iterator>::iterator iter =
 			s.options_.find(v.shortName_);
@@ -885,13 +896,110 @@ namespace argstream
 				}
 				s.options_.erase(iter);
 			}
-			else if (!std::is_same<T, bool>::value)
+			else
 			{
 				s.isOk_ = false;
 				typename TSTRSTREAM<CHARTYPE>::O os;
 				os	<< TSTR<CHARTYPE>::ToString("No value following switch ") << iter->first
 					<< TSTR<CHARTYPE>::ToString(" on command line");
 				s.errors_.push_back(os.str());
+			}
+		}
+		else
+		{
+			if (v.mandatory_)
+			{
+				s.isOk_ = false;
+				TSTRSTREAM<CHARTYPE>::O os;
+				os<< TSTR<CHARTYPE>::ToString("Mandatory parameter ");
+				if (!v.shortName_.empty()) os<<'-'<<v.shortName_;
+				if (!v.longName_.empty())
+				{
+					if (!v.shortName_.empty()) os<<'/';
+					os << TSTR<CHARTYPE>::ToString("--") << v.longName_;
+				}
+				os<< TSTR<CHARTYPE>::ToString(" missing");
+				s.errors_.push_back(os.str());
+			}
+		}
+		return s;
+	}
+
+	template<typename CHARTYPE, typename T>
+	argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ValueHolder<CHARTYPE, bool>& v)
+	{
+		// Search in the options if there is any such option defined either with a
+		// short name or a long name. If both are found, only the last one is
+		// used.
+#ifdef ARGSTREAM_DEBUG    
+#ifdef _UNICODE
+		std::wcout<<L"DEBUG: searching "<<v.shortName_<<L" "<<v.longName_<<std::endl;
+#else
+		std::cout<<"DEBUG: searching "<<v.shortName_<<" "<<v.longName_<<std::endl;
+#endif
+#endif    
+		s.argHelps_.push_back(argstream<CHARTYPE>::help_entry(v.name(),v.description()));
+		if (v.mandatory_)
+		{
+			if (!v.shortName_.empty())
+			{
+				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" -");
+				s.cmdLine_ += v.shortName_;
+			}
+			else
+			{
+				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" --");
+				s.cmdLine_ += v.longName_;
+			}
+		}
+		else
+		{
+			if (!v.shortName_.empty())
+			{
+				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" [-");
+				s.cmdLine_ += v.shortName_;
+			}
+			else
+			{
+				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" [--");
+				s.cmdLine_ += v.longName_;
+			}
+			s.cmdLine_ += TSTR<CHARTYPE>::ToString("]");
+
+		}
+		std::map<typename TSTR<CHARTYPE>::type, typename argstream<CHARTYPE>::value_iterator>::iterator iter =
+			s.options_.find(v.shortName_);
+		if (iter == s.options_.end())
+		{
+			iter = s.options_.find(v.longName_);
+		}
+		if (iter != s.options_.end())
+		{
+			if (iter->second != s.values_.end())
+			{
+#ifdef ARGSTREAM_DEBUG
+#ifdef _UNICODE
+				std::wcout<<L"DEBUG: found value "<<*(iter->second)<<std::endl;
+#else
+				std::cout<<"DEBUG: found value "<<*(iter->second)<<std::endl;
+#endif
+#endif	
+				ValueParser<CHARTYPE, T> p;
+				*(v.value_) = p(*(iter->second));
+				// The option and its associated value are removed, the subtle thing
+				// is that someother options might have this associated value too,
+				// which we must invalidate.
+				// Modified by Levski Weng
+				//s.values_.erase(iter->second);      
+				for (std::map<typename TSTR<CHARTYPE>::type, typename argstream<CHARTYPE>::value_iterator>::iterator
+					jter = s.options_.begin();jter != s.options_.end();++jter)
+				{
+					if (jter->second == iter->second)
+					{
+						jter->second = s.values_.end();
+					}
+				}
+				s.options_.erase(iter);
 			}
 			else
 			{
