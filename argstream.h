@@ -27,6 +27,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <iostream> 
+#include <type_traits>
 
 namespace argstream
 {
@@ -353,6 +354,10 @@ namespace argstream
 			is>>t;
 			return t;
 		}
+		inline bool operator()(bool s) const
+		{
+			return t;
+		}
 	};
 	// We need to specialize for string otherwise parsing of a value that
 	// contains space (for example a string with space passed in quotes on the
@@ -464,8 +469,9 @@ namespace argstream
 		}
 		return os.str();
 	}
+
 	template<typename CHARTYPE, typename T>
-	typename TSTR<CHARTYPE>::type ValueHolder<CHARTYPE, T>::description() const
+	inline typename TSTR<CHARTYPE>::type ValueHolder<CHARTYPE, T>::description() const
 	{
 		typename TSTRSTREAM<CHARTYPE>::O os;
 		os<<description_;
@@ -475,10 +481,14 @@ namespace argstream
 		}
 		else
 		{
-			os<<TSTR<CHARTYPE>::ToString("(default=")<<initialValue_<<TSTR<CHARTYPE>::ToString(")");
+			if (!std::is_same<T, bool>::value)
+			{
+				os<<TSTR<CHARTYPE>::ToString("(default=")<<initialValue_<<TSTR<CHARTYPE>::ToString(")");
+			}
 		}
 		return os.str();
 	}
+	
 	//************************************************************
 	// Implementation of OptionHolder
 	//************************************************************
@@ -814,7 +824,10 @@ namespace argstream
 				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" --");
 				s.cmdLine_ += v.longName_;
 			}
-			s.cmdLine_ += TSTR<CHARTYPE>::ToString(" value");
+			if (!std::is_same<T, bool>::value)
+			{
+				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" value");
+			}
 		}
 		else
 		{
@@ -827,8 +840,15 @@ namespace argstream
 			{
 				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" [--");
 				s.cmdLine_ += v.longName_;
-			}  
-			s.cmdLine_ += TSTR<CHARTYPE>::ToString(" value]");
+			}
+			if (!std::is_same<T, bool>::value)
+			{
+				s.cmdLine_ += TSTR<CHARTYPE>::ToString(" value]");
+			}
+			else
+			{
+				s.cmdLine_ += TSTR<CHARTYPE>::ToString("]");
+			}
 
 		}
 		std::map<typename TSTR<CHARTYPE>::type, typename argstream<CHARTYPE>::value_iterator>::iterator iter =
@@ -839,9 +859,6 @@ namespace argstream
 		}
 		if (iter != s.options_.end())
 		{
-			// If we find counterpart for value holder on command line, either it
-			// has an associated value in which case we assign it, or it has not, in
-			// which case we have an error.
 			if (iter->second != s.values_.end())
 			{
 #ifdef ARGSTREAM_DEBUG
@@ -868,13 +885,17 @@ namespace argstream
 				}
 				s.options_.erase(iter);
 			}
-			else
+			else if (!std::is_same<T, bool>::value)
 			{
 				s.isOk_ = false;
 				typename TSTRSTREAM<CHARTYPE>::O os;
 				os	<< TSTR<CHARTYPE>::ToString("No value following switch ") << iter->first
 					<< TSTR<CHARTYPE>::ToString(" on command line");
 				s.errors_.push_back(os.str());
+			}
+			else
+			{
+				*(v.value_) = true;
 			}
 		}
 		else
