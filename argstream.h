@@ -138,7 +138,6 @@ namespace argstream
 		static inline CHARTYPE GetHelpShortName() { return 0; }
 		static inline CHARTYPE* GetHelpLongName() { return NULL; }
 		static inline CHARTYPE* GetHelpDesc() { return NULL; }
-		static inline CHARTYPE* GetCopyright() { return NULL; }
 	};
 	template<> char DEFAULT<char>::GetHelpShortName() { return 'h'; }
 	template<> wchar_t DEFAULT<wchar_t>::GetHelpShortName() { return L'h'; }
@@ -148,9 +147,6 @@ namespace argstream
 
 	template<>char* DEFAULT<char>::GetHelpDesc() { return "Display this help"; }
 	template<>wchar_t* DEFAULT<wchar_t>::GetHelpDesc() { return L"Display this help"; }
-
-	template<>char* DEFAULT<char>::GetCopyright() { return "CopyRight (c) 2015. Levski Weng <levskiweng@gmail.com>. All rights reserved."; }
-	template<>wchar_t* DEFAULT<wchar_t>::GetCopyright() { return L"CopyRight (c) 2015. Levski Weng <levskiweng@gmail.com>. All rights reserved."; }
 
 	template<typename CHARTYPE> class argstream;
 
@@ -219,7 +215,24 @@ namespace argstream
 	{
 		return ValueHolder<CHARTYPE, T>(l, b, desc, mandatory);
 	}
-
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Interface of CopyrightHolder
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template <typename CHARTYPE>
+	class CopyrightHolder
+	{
+	public:
+		inline CopyrightHolder(const CHARTYPE* copyright)
+			:copyright_(copyright)
+		{
+		};
+		typename TSTR<CHARTYPE>::type copyright() const { return copyright_; };
+		template<typename CHARTYPE>
+		friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s, const CopyrightHolder<CHARTYPE>& e);
+	private:
+		typename TSTR<CHARTYPE>::type copyright_;
+	};
+	
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Interface of ExampleHolder
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -311,6 +324,12 @@ namespace argstream
 	inline ExampleHolder<CHARTYPE> example(const CHARTYPE* cmdline, const CHARTYPE* desc)
 	{
 		return ExampleHolder<CHARTYPE>(cmdline, desc);
+	}
+	
+	template<typename CHARTYPE>
+	inline CopyrightHolder<CHARTYPE> copyright(const CHARTYPE* copyright)
+	{
+		return CopyrightHolder<CHARTYPE>(copyright);
 	}
 	
 	template<typename CHARTYPE, typename T>
@@ -428,6 +447,7 @@ namespace argstream
 		template<typename CHARTYPE> friend inline argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const OptionHolder<CHARTYPE>& v);
 		template<typename CHARTYPE, typename T, typename O> friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ValuesHolder<CHARTYPE, T,O>& v);
 		template<typename CHARTYPE> friend inline argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ExampleHolder<CHARTYPE>& v);
+		template<typename CHARTYPE> friend inline argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const CopyrightHolder<CHARTYPE>& v);
 
 		inline bool helpRequested() const;
 		inline bool isOk() const;
@@ -449,6 +469,7 @@ namespace argstream
 		std::deque<std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type>> argHelps_;
 		std::deque<std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type>> argExamples_;
 		typename TSTR<CHARTYPE>::type cmdLine_;
+		typename TSTR<CHARTYPE>::type copyright_;
 		std::deque<typename TSTR<CHARTYPE>::type> errors_;
 		bool helpRequested_;
 	};
@@ -767,7 +788,11 @@ namespace argstream
 	inline typename TSTR<CHARTYPE>::type argstream<CHARTYPE>::usage() const
 	{
 		typename TSTRSTREAM<CHARTYPE>::O os;
-		os<<DEFAULT<CHARTYPE>::GetCopyright()<<std::endl<<std::endl<<TSTR<CHARTYPE>::ToString("Usage: ")<<progName_<<cmdLine_<<std::endl;
+		if (copyright_.size())
+		{
+			os << copyright_ << std::endl << std:: endl;
+		}
+		os<<TSTR<CHARTYPE>::ToString("Usage: ")<<progName_<<cmdLine_<<std::endl;
 		unsigned int lmax = 0;
 		for (std::deque<help_entry>::const_iterator
 			iter = argHelps_.begin();iter != argHelps_.end();++iter)
@@ -1023,6 +1048,12 @@ namespace argstream
 				s.errors_.push_back(os.str());
 			}
 		}
+		return s;
+	}
+	template<typename CHARTYPE>
+	inline argstream<CHARTYPE>&	operator>>(argstream<CHARTYPE>& s,const CopyrightHolder<CHARTYPE>& v)
+	{
+		s.copyright_ = v.copyright();
 		return s;
 	}
 

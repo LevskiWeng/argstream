@@ -10,6 +10,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	argstream::argstream<_TCHAR> as(argc, argv);
 	argstream::TSTR<_TCHAR>::type filePath(_T("C:\\default_file.name"));
 	int size;
+	as >> argstream::copyright(_T("CopyRight (c) 2015. Levski Weng <levskiweng@gmail.com>. All rights reserved."));
 	as >> argstream::parameter(
 		_T('f'), //short parameter name
 		_T("file"), //long parameter name
