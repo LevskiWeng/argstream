@@ -19,14 +19,15 @@
 #ifndef ARGSTREAM_H
 #define ARGSTREAM_H
 
-#include <clocale>
 #include <string>
 #include <list>
 #include <deque>
 #include <map>
 #include <stdexcept>
 #include <sstream>
-#include <iostream> 
+#include <iostream>
+#include <locale>
+#include <codecvt>
 #include <type_traits>
 
 namespace argstream
@@ -37,91 +38,65 @@ namespace argstream
 	{
 		typedef std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> type;
 
-		static inline std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(const char* s, char*locale = "zh-CN");
-		static inline std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(const wchar_t* s, char* locale = "zh-CN");
-		static inline std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(char s, char*locale = "zh-CN");
-		static inline std::basic_string<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> ToString(wchar_t s, char*locale = "zh-CN");
+		static inline typename type ToString(const char* utf8_str);
+		static inline typename type ToString(const wchar_t* wstr);
+		static inline typename type ToString(char c);
+		static inline typename type ToString(wchar_t wc);
 		
 	};
 
 	template<>
-	std::wstring TSTR<wchar_t>::ToString(const char* s, char* locale)
+	std::wstring TSTR<wchar_t>::ToString(const char* utf8_str)
 	{
-		wchar_t buf[MAXPATH+1] = {0};
-#ifdef WIN32
-		size_t returnSize = 0;
-#endif
-		setlocale(LC_CTYPE, locale);
-#ifdef WIN32
-		mbstowcs_s(&returnSize, buf, s, strlen(s));
-#else
-		mbstowcs(buf, s, sizeof(buf)/sizeof(buf[0]));
-#endif
-		setlocale(LC_CTYPE, "");
-
-		return std::wstring(buf);
+		std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+		return conv.from_bytes(utf8_str);
 	}
 
 	template<>
-	std::wstring TSTR<wchar_t>::ToString(const wchar_t* s, char* /*locale*/)
+	std::wstring TSTR<wchar_t>::ToString(const wchar_t* wstr)
 	{
-		return std::wstring(s);
+		return std::wstring(wstr);
 	}
 
 	template<>
-	std::string TSTR<char>::ToString(const char* s, char* /*locale*/)
+	std::wstring TSTR<wchar_t>::ToString(char c)
 	{
-		return std::string(s);
+		std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+		return conv.from_bytes(c);
 	}
 
 	template<>
-	std::string TSTR<char>::ToString(const wchar_t* s, char* locale)
+	std::wstring TSTR<wchar_t>::ToString(wchar_t wc)
 	{
-		char buf[MAXPATH+1] = {0};
-#ifdef WIN32
-		size_t returnSize = 0;	
-#endif
-		setlocale(LC_CTYPE, locale);
-#ifdef WIN32
-		wcstombs_s(&returnSize, buf, sizeof(buf)/sizeof(buf[0]), s, wcslen(s));
-#else
-		wcstombs(buf, s, sizeof(buf)/sizeof(buf[0]));
-#endif
-		setlocale(LC_CTYPE, "");
-
-		return std::string(buf);
-	}
-
-	template<>
-	std::string TSTR<char>::ToString(char s, char* /*locale*/)
-	{
-		char buf[2] = {0};
-		buf[0] = s;
-		return std::string(buf);	
-	}
-
-	template<>
-	std::wstring TSTR<wchar_t>::ToString(char s, char* /*locale*/)
-	{
-		wchar_t buf[2] = {0};
-		buf[0] = static_cast<wchar_t>(s);
+		wchar_t buf[] = {wc, 0};
 		return std::wstring(buf);	
 	}
 
 	template<>
-	std::string TSTR<char>::ToString(wchar_t s, char* /*locale*/)
+	std::string TSTR<char>::ToString(const char* utf8_str)
 	{
-		char buf[2] = {0};
-		buf[0] = static_cast<char>(s);
+		return std::string(utf8_str);
+	}
 
+	template<>
+	std::string TSTR<char>::ToString(const wchar_t* wstr)
+	{
+		std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+		return conv.to_bytes(wstr);
+	}
+
+	template<>
+	std::string TSTR<char>::ToString(char c)
+	{
+		char buf[] = {c, 0};
 		return std::string(buf);	
 	}
+
 	template<>
-	std::wstring TSTR<wchar_t>::ToString(wchar_t s, char* /*locale*/)
+	std::string TSTR<char>::ToString(wchar_t wc)
 	{
-		wchar_t buf[2] = {0};
-		buf[0] = s;
-		return std::wstring(buf);	
+		std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+		return conv.to_bytes(wc);
 	}
 
 	template<typename CHARTYPE>
