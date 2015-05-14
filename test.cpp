@@ -4,58 +4,21 @@
 #include "argstream.h"
 
 using namespace std;
-
-inline std::ostream& blue(std::ostream &s)
+enum color
 {
-    HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE); 
-    SetConsoleTextAttribute(hStdout, FOREGROUND_BLUE
-              |FOREGROUND_GREEN|FOREGROUND_INTENSITY);
-    return s;
-}
-
-inline std::ostream& red(std::ostream &s)
-{
-    HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE); 
-    SetConsoleTextAttribute(hStdout, 
-                FOREGROUND_RED|FOREGROUND_INTENSITY);
-    return s;
-}
-
-inline std::ostream& green(std::ostream &s)
-{
-    HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE); 
-    SetConsoleTextAttribute(hStdout, 
-              FOREGROUND_GREEN|FOREGROUND_INTENSITY);
-    return s;
-}
-
-inline std::ostream& yellow(std::ostream &s)
-{
-    HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE); 
-    SetConsoleTextAttribute(hStdout, 
-         FOREGROUND_GREEN|FOREGROUND_RED|FOREGROUND_INTENSITY);
-    return s;
-}
-
-inline std::ostream& white(std::ostream &s)
-{
-    HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE); 
-    SetConsoleTextAttribute(hStdout, 
-       FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
-    return s;
-}
-
-struct color {
-    color(WORD attribute):m_color(attribute){};
-    WORD m_color;
+	red=FOREGROUND_RED|FOREGROUND_INTENSITY,
+	green=FOREGROUND_GREEN|FOREGROUND_INTENSITY,
+	blue=FOREGROUND_BLUE|FOREGROUND_INTENSITY,
+	yellow=FOREGROUND_GREEN|FOREGROUND_RED|FOREGROUND_INTENSITY,
+	white=FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE
 };
 
 template <class _Elem, class _Traits>
 std::basic_ostream<_Elem,_Traits>& 
-      operator<<(std::basic_ostream<_Elem,_Traits>& i, color& c)
+operator<<(std::basic_ostream<_Elem,_Traits>& i, const color& c)
 {
     HANDLE hStdout=GetStdHandle(STD_OUTPUT_HANDLE); 
-    SetConsoleTextAttribute(hStdout,c.m_color);
+    SetConsoleTextAttribute(hStdout,c);
     return i;
 }
 
@@ -84,11 +47,11 @@ int wmain()
 			L"-s",
 			TEST_STR1
 		};
-		int argc = sizeof(argv);
+		int argc = sizeof(argv)/sizeof(wchar_t*);
 		wstring testStr;
 		argstream::argstream<wchar_t> as(argc, argv);
-		as >> argstream::parameter(L's', testStr, L"desc", false);
-		as.defaultErrorHandling();
+		as >> argstream::parameter(L's', L"testString", testStr, L"desc", false);
+		as.defaultErrorHandling(true);
 
 		TestEqual(TEST_STR1, testStr, L"Test: StringWithoutSpaces");
 		

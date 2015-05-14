@@ -1,19 +1,28 @@
-/* Copyright (C) 2004 Xavier Décoret <Xavier.Decoret@imag.fr>
-*  Portions Copyright (C) 2015 Levski Weng <levskiweng@gmail.com>
-*
-* argsteam is a free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; either version 2 of the License, or
-* (at your option) any later version.
-* 
-* argstream is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-* 
-* You should have received a copy of the GNU General Public License
-* along with argstream; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
+/** 
+	argstream.h
+	Purpose: Parse the command line. It's a mod of original argstream developed 
+	by Xavier Décoret. This mod adds support for muti-byte argument string and 
+	wide-char argument string.
+	Copyright (C) 2004 Xavier Décoret <Xavier.Decoret@imag.fr>
+	Portions Copyright (C) 2015 Levski Weng <levskiweng@gmail.com>
+
+	@author Xavier Décoret
+	@author Levski Weng
+	@version 1.0
+ 
+	@copyright argsteam is a free software; you can redistribute it and/or 
+	modify it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or 
+	(at your option) any later version.
+  
+	@copyright argstream is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+  
+	@copyright You should have received a copy of the GNU General Public License
+	along with argstream; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #ifndef ARGSTREAM_H
@@ -29,10 +38,199 @@
 #include <locale>
 #include <codecvt>
 #include <type_traits>
+#include <cassert>
 
 namespace argstream
 {
-	const size_t MAXPATH=1024;
+	//--------------------------------------------------------------------------
+	/**
+		Main class to store the argument string.
+	*/
+	template<typename CHARTYPE> 
+	class argstream;
+
+	/**
+		Get the help description.
+	*/
+	template<typename CHARTYPE, typename T>
+	struct description_policy;
+
+	/**
+		The option holder which store the specified option.
+	*/
+	template <typename CHARTYPE>
+	class OptionHolder;
+
+	/**
+		The value holder which stores the value of the speicified argument.
+	*/
+	template<typename CHARTYPE, typename T>
+	class ValueHolder;
+
+	template<typename CHARTYPE, typename T, typename O> 
+	class ValuesHolder;
+
+
+	/**
+		Convert UTF-8 string to UTF-16 and vice versa.
+	*/
+	template<typename CHARTYPE>
+	struct TSTR;
+
+	/**
+		Template string stream
+	*/
+	template<typename CHARTYPE>
+	struct TSTRSTREAM;
+
+	/**
+		Store the default values.
+	*/
+	template<typename CHARTYPE>
+	struct DEFAULT;
+
+	/**
+		Store the copyright information.
+	*/
+	template <typename CHARTYPE>
+	class CopyrightHolder;
+
+	/**
+		Store the command usage examples.
+	*/
+	template <typename CHARTYPE>
+	class ExampleHolder;
+
+	/** 
+		Parse the command line and store the specified parameter value.
+	*/
+	template <typename CHARTYPE, typename T>
+	inline ValueHolder<CHARTYPE, T>
+	parameter(CHARTYPE s, const CHARTYPE* l, T& b, const CHARTYPE* desc, bool mandatory = true);
+
+	/**
+		Store multi values.
+
+		@param o Value holder. 
+		@param desc Description of the values.
+		@param len The length of the values.
+
+		@return Return values.
+	*/
+	template<typename CHARTYPE, typename T, typename O>
+	inline ValuesHolder<CHARTYPE, T, O>
+	values(const O& o, const CHARTYPE* desc, int len=-1);
+
+	/**
+		Generate the option.
+
+		@param s Short parameter name.
+		@param l Long parameter name.
+		@param b Whether the parameter appears or not.
+		@param desc The description of the parameter.
+
+		@return The option holder.
+	*/
+	template<typename CHARTYPE>
+	inline OptionHolder<CHARTYPE> 
+	option(
+		CHARTYPE s,
+		const CHARTYPE* l,
+		bool& b,
+		const CHARTYPE* desc);
+
+	/**
+		Generate the help option.
+	*/
+	template<typename CHARTYPE>
+	inline OptionHolder<CHARTYPE> 
+	help();
+
+	/**
+		Generate the examples.
+
+		@param cmdline Example command line.
+		@param desc The description of the command line.
+
+		@return The object that holds the example.
+	*/
+	template<typename CHARTYPE>
+	inline ExampleHolder<CHARTYPE> 
+	example(const CHARTYPE* cmdline, const CHARTYPE* desc);
+
+	/**
+		Generate the copyright information which will appear on the top of the help message.
+
+		@param copyright Copyright message.
+
+		@return The object that holds the copyright information.
+	*/
+	template<typename CHARTYPE>
+	inline CopyrightHolder<CHARTYPE> 
+	copyright(const CHARTYPE* copyright);
+
+	/**
+		Parse the "option - value" parameter.
+
+		@param s Reference to the argstream object which is going to be parsed.
+		@param v Reference to the value holder which stores the value.
+
+		@return Reference to the parsed argstream object.
+	*/
+	template<typename CHARTYPE, typename T> 
+	inline argstream<CHARTYPE>& 
+	operator>> (argstream<CHARTYPE>& s, const ValueHolder<CHARTYPE, T>& v);
+
+	/**
+		Parse the "option - value1 value2 value3" parameters.
+
+		@param s Reference to the argstream object which is going to be parsed.
+		@param v Reference to the values holder which stores the values.
+
+		@return Reference to the parsed argstream object.
+	*/
+	template<typename CHARTYPE, typename T, typename O> 
+	inline argstream<CHARTYPE>& 
+	operator>> (argstream<CHARTYPE>& s, const ValuesHolder<CHARTYPE, T, O>& v);
+
+	/**
+		Parse the "option" parameters.
+
+		@param s Reference to the argstream object which is going to be parsed.
+		@param v Reference to the option holder which stores the existence of the option.
+
+		@return Reference to the parsed argstream object.
+	*/
+	template<typename CHARTYPE>
+	inline argstream<CHARTYPE>&	
+	operator>>(argstream<CHARTYPE>& s,const OptionHolder<CHARTYPE>& v);
+
+	/**
+		Add examples section to the help output.
+
+		@param s Reference to the argstream object which is going to add the example.
+		@param e Reference to the object which holds the example.
+
+		@return Reference to the argstream object which has added the example.
+	*/
+	template<typename CHARTYPE>
+	argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s, const ExampleHolder<CHARTYPE>& e);
+
+	/**
+		Add copyright section to the help output.
+
+		@param s Reference to the argstream object which is going to add the copyright information.
+		@param c Reference to the object which holds the copyright information.
+
+		@return Reference to the argstream object which has added the copyright information.
+	*/
+	template<typename CHARTYPE>
+	argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s, const CopyrightHolder<CHARTYPE>& c);
+	//--------------------------------------------------------------------------
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Interface of TSTR<CHARTYPE>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	template<typename CHARTYPE>
 	struct TSTR
 	{
@@ -42,9 +240,11 @@ namespace argstream
 		static inline typename type ToString(const wchar_t* wstr);
 		static inline typename type ToString(char c);
 		static inline typename type ToString(wchar_t wc);
-		
 	};
 
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Implementation of TSTR<CHARTYPE>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	template<>
 	std::wstring TSTR<wchar_t>::ToString(const char* utf8_str)
 	{
@@ -99,6 +299,9 @@ namespace argstream
 		return conv.to_bytes(wc);
 	}
 
+	/** 
+		@todo Expand this struct to hold file string and etc.
+	*/
 	template<typename CHARTYPE>
 	struct TSTRSTREAM
 	{
@@ -106,14 +309,19 @@ namespace argstream
 		typedef std::basic_ostringstream<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> O;
 	};
 
-	// You could change the following default values as you wish :-)
+	/**
+		@todo Need a better implementation to eliminate this struct.
+	*/
 	template<typename CHARTYPE>
 	struct DEFAULT
 	{
-		static inline CHARTYPE GetHelpShortName() { return 0; }
-		static inline CHARTYPE* GetHelpLongName() { return NULL; }
-		static inline CHARTYPE* GetHelpDesc() { return NULL; }
+		static inline CHARTYPE GetHelpShortName();
+		static inline CHARTYPE* GetHelpLongName();
+		static inline CHARTYPE* GetHelpDesc();
 	};
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Implementation of DEFAULT<CHARTYPE>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	template<> char DEFAULT<char>::GetHelpShortName() { return 'h'; }
 	template<> wchar_t DEFAULT<wchar_t>::GetHelpShortName() { return L'h'; }
 
@@ -123,13 +331,6 @@ namespace argstream
 	template<>char* DEFAULT<char>::GetHelpDesc() { return "Display this help"; }
 	template<>wchar_t* DEFAULT<wchar_t>::GetHelpDesc() { return L"Display this help"; }
 
-	template<typename CHARTYPE> class argstream;
-
-	template<typename CHARTYPE, typename T> struct description_policy;
-	template<typename CHARTYPE, typename T>	class ValueHolder;
-	template<typename CHARTYPE, typename T, typename O> class ValuesHolder;
-	template<typename CHARTYPE, typename T> argstream<CHARTYPE>& operator>> (argstream<CHARTYPE>&, const ValueHolder<CHARTYPE, T>&);
-	template<typename CHARTYPE, typename T, typename O> argstream<CHARTYPE>& operator>> (argstream<CHARTYPE>&, const ValuesHolder<CHARTYPE, T, O>&);
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Interface of ValueHolder<CHARTYPE, T>
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -162,297 +363,12 @@ namespace argstream
 		typename TSTR<CHARTYPE>::type description_;  
 		bool mandatory_;
 	};
-	template <typename CHARTYPE, typename T>
-	inline ValueHolder<CHARTYPE, T>
-		parameter(CHARTYPE s,
-		const CHARTYPE* l,
-		T& b,
-		const CHARTYPE* desc,
-		bool mandatory = true)
-	{
-		return ValueHolder<CHARTYPE, T>(s,l,b,desc,mandatory);
-	}
-	template <typename CHARTYPE, typename T>
-	inline ValueHolder<CHARTYPE, T>
-		parameter(CHARTYPE s,
-		T& b,
-		const CHARTYPE* desc,
-		bool mandatory = true)
-	{
-		return ValueHolder<CHARTYPE, T>(s, b, desc, mandatory);
-	}
-	template <typename CHARTYPE, typename T>
-	inline ValueHolder<CHARTYPE, T>
-		parameter(const CHARTYPE* l,
-		T& b,
-		const CHARTYPE* desc,
-		bool mandatory = true)
-	{
-		return ValueHolder<CHARTYPE, T>(l, b, desc, mandatory);
-	}
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	// Interface of CopyrightHolder
+	// Implementation of ValueHodler<CHARTYPE, T>
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	template <typename CHARTYPE>
-	class CopyrightHolder
-	{
-	public:
-		inline CopyrightHolder(const CHARTYPE* copyright)
-			:copyright_(copyright)
-		{
-		};
-		typename TSTR<CHARTYPE>::type copyright() const { return copyright_; };
-		template<typename CHARTYPE>
-		friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s, const CopyrightHolder<CHARTYPE>& e);
-	private:
-		typename TSTR<CHARTYPE>::type copyright_;
-	};
-	
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	// Interface of ExampleHolder
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	template <typename CHARTYPE>
-	class ExampleHolder
-	{
-	public:
-		inline ExampleHolder(const CHARTYPE* cmdline, const CHARTYPE* desc)
-			:cmdline_(cmdline),
-			description_(desc)
-		{
-		};
-		typename TSTR<CHARTYPE>::type cmdline() const { return cmdline_; };
-		typename TSTR<CHARTYPE>::type description() const { return description_; };
-		template<typename CHARTYPE>
-		friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s, const ExampleHolder<CHARTYPE>& e);
-	private:
-		typename TSTR<CHARTYPE>::type cmdline_;
-		typename TSTR<CHARTYPE>::type description_;
-	};
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	// Interface of OptionHolder
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	template <typename CHARTYPE>
-	class OptionHolder
-	{
-	public:
-		inline OptionHolder(CHARTYPE s,
-			const CHARTYPE* l,
-			bool& b,
-			const CHARTYPE* desc);
-		inline OptionHolder(const CHARTYPE* l,
-			bool& b,
-			const CHARTYPE* desc);
-		inline OptionHolder(CHARTYPE s,
-			bool& b,
-			const CHARTYPE* desc);
-		template<typename CHARTYPE>
-		friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const OptionHolder<CHARTYPE>& v);
-		inline typename TSTR<CHARTYPE>::type name() const;
-		inline typename TSTR<CHARTYPE>::type description() const;
-	protected:
-		inline OptionHolder(CHARTYPE s,
-			const CHARTYPE* l,
-			const CHARTYPE* desc);
-
-		template<typename CHARTYPE>
-		friend OptionHolder<CHARTYPE> help();
-
-	private:
-		typename TSTR<CHARTYPE>::type shortName_;
-		typename TSTR<CHARTYPE>::type longName_;
-		bool* value_;
-		typename TSTR<CHARTYPE>::type description_;  
-	};
-	template<typename CHARTYPE>
-	inline OptionHolder<CHARTYPE> option(
-		CHARTYPE s,
-		const CHARTYPE* l,
-		bool& b,
-		const CHARTYPE* desc)
-	{
-		return OptionHolder<CHARTYPE>(s, l, b, desc);
-	}
-	template<typename CHARTYPE>
-	inline OptionHolder<CHARTYPE> option(
-		CHARTYPE s,
-		bool& b,
-		const CHARTYPE* desc)
-	{
-		return OptionHolder<CHARTYPE>(s, b, desc);
-	}
-	template<typename CHARTYPE>
-	inline OptionHolder<CHARTYPE> option(
-		const CHARTYPE* l,
-		bool& b,
-		const CHARTYPE* desc)
-	{
-		return OptionHolder<CHARTYPE>(l, b, desc);
-	}
-	
-	template<typename CHARTYPE>
-	inline OptionHolder<CHARTYPE> help()
-	{
-		return OptionHolder<CHARTYPE>(DEFAULT<CHARTYPE>::GetHelpShortName(), DEFAULT<CHARTYPE>::GetHelpLongName(), DEFAULT<CHARTYPE>::GetHelpDesc());
-	}
-
-	template<typename CHARTYPE>
-	inline ExampleHolder<CHARTYPE> example(const CHARTYPE* cmdline, const CHARTYPE* desc)
-	{
-		return ExampleHolder<CHARTYPE>(cmdline, desc);
-	}
-	
-	template<typename CHARTYPE>
-	inline CopyrightHolder<CHARTYPE> copyright(const CHARTYPE* copyright)
-	{
-		return CopyrightHolder<CHARTYPE>(copyright);
-	}
-	
-	template<typename CHARTYPE, typename T>
-	struct description_policy
-	{
-		static inline typename TSTR<CHARTYPE>::type execute(const ValueHolder<CHARTYPE, T>* v) 
-		{
-			typename TSTRSTREAM<CHARTYPE>::O os;
-			os<<v->description_;
-			if (v->mandatory_)
-			{
-				os<<TSTR<CHARTYPE>::ToString("(mandatory)");
-			}
-			else
-			{
-				os<<TSTR<CHARTYPE>::ToString("(default=")<<v->initialValue_<<TSTR<CHARTYPE>::ToString(")");
-			}
-			return os.str();
-		}
-	};
-
-	template<typename CHARTYPE>
-	struct description_policy<CHARTYPE, bool> 
-	{
-		static inline typename TSTR<CHARTYPE>::type execute(const ValueHolder<CHARTYPE, bool>* v) 
-		{
-			typename TSTRSTREAM<CHARTYPE>::O os;
-			os<<v->description_;
-			if (v->mandatory_)
-			{
-				os<<TSTR<CHARTYPE>::ToString("(mandatory)");
-			}
-			return os.str();
-		}
-	};
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	// Interface of ValuesHolder
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	template<typename CHARTYPE, typename T, typename O>
-	class ValuesHolder
-	{
-	public:
-		ValuesHolder(const O& o,
-			const CHARTYPE* desc,
-			int len);
-		template<typename CHARTYPE, typename T, typename O>
-		friend argstream& operator>><CHARTYPE, T, O>(argstream& s, const ValuesHolder<CHARTYPE, T, O>& v);
-		typename TSTR<CHARTYPE>::type name() const;
-		typename TSTR<CHARTYPE>::type description() const;
-		typedef T value_type;
-	private:
-		mutable O   value_;
-		typename TSTR<CHARTYPE>::type description_;
-		int len_;
-		CHARTYPE letter_;
-	};
-	template<typename CHARTYPE, typename T, typename O>
-	inline ValuesHolder<CHARTYPE, T, O>
-		values(const O& o,
-		const CHARTYPE* desc,
-		int len=-1)
-	{
-		return ValuesHolder<CHARTYPE, T, O>(o, desc, len);
-	}
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	// Interface of ValueParser
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	template <typename CHARTYPE, class T>
-	class ValueParser
-	{
-	public:
-		inline T operator()(const typename TSTR<CHARTYPE>::type& s) const
-		{
-			typename TSTRSTREAM<CHARTYPE>::I is(s);
-			T t;
-			is>>t;
-			return t;
-		}
-		inline bool operator()(bool s) const
-		{
-			return t;
-		}
-	};
-	// We need to specialize for string otherwise parsing of a value that
-	// contains space (for example a string with space passed in quotes on the
-	// command line) would parse only the first element of the value!!!
-	template <>
-	class ValueParser<char, std::string>
-	{
-	public:
-		inline std::string operator()(std::string& s) const
-		{
-			return s;
-		}
-	};  
-	template <>
-	class ValueParser<wchar_t, std::wstring>
-	{
-	public:
-		inline std::wstring operator()(std::wstring& s) const
-		{
-			return s;
-		}
-	};  
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	// Interface of argstream
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	template<typename CHARTYPE>
-	class argstream
-	{
-	public:
-		inline argstream<CHARTYPE>(int argc,CHARTYPE** argv);
-		inline argstream<CHARTYPE>(const CHARTYPE* c);
-		template<typename CHARTYPE, typename T> friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ValueHolder<CHARTYPE, T>& v);
-		template<typename CHARTYPE> friend inline argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const OptionHolder<CHARTYPE>& v);
-		template<typename CHARTYPE, typename T, typename O> friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ValuesHolder<CHARTYPE, T,O>& v);
-		template<typename CHARTYPE> friend inline argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ExampleHolder<CHARTYPE>& v);
-		template<typename CHARTYPE> friend inline argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const CopyrightHolder<CHARTYPE>& v);
-
-		inline bool helpRequested() const;
-		inline bool isOk() const;
-		inline typename TSTR<CHARTYPE>::type errorLog() const;
-		inline typename TSTR<CHARTYPE>::type usage() const;
-		inline void defaultErrorHandling(bool ignoreUnused=false) const;
-		static inline CHARTYPE uniqueLetter();
-	protected:
-		void parse(int argc, CHARTYPE** argv);
-	private:
-		typedef typename std::list<typename TSTR<CHARTYPE>::type>::iterator value_iterator;
-		typedef typename std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type> help_entry;
-		typedef typename std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type> example_entry;
-		typename TSTR<CHARTYPE>::type progName_;
-		std::map<typename TSTR<CHARTYPE>::type, value_iterator> options_;
-		std::list<typename TSTR<CHARTYPE>::type> values_;
-		bool minusActive_;
-		bool isOk_;
-		std::deque<std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type>> argHelps_;
-		std::deque<std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type>> argExamples_;
-		typename TSTR<CHARTYPE>::type cmdLine_;
-		typename TSTR<CHARTYPE>::type copyright_;
-		std::deque<typename TSTR<CHARTYPE>::type> errors_;
-		bool helpRequested_;
-	};
-	//************************************************************
-	// Implementation of ValueHolder<CHARTYPE, T>
-	//************************************************************
 	template<typename CHARTYPE, typename T> 
-	ValueHolder<CHARTYPE, T>::ValueHolder(CHARTYPE s,
+	ValueHolder<CHARTYPE, T>::ValueHolder(
+		CHARTYPE s,
 		const CHARTYPE* l,
 		T& v,
 		const CHARTYPE* desc,
@@ -466,7 +382,8 @@ namespace argstream
 	{
 	}
 	template<typename CHARTYPE, typename T>
-	ValueHolder<CHARTYPE, T>::ValueHolder(const CHARTYPE* l,
+	ValueHolder<CHARTYPE, T>::ValueHolder(
+		const CHARTYPE* l,
 		T& v,
 		const CHARTYPE* desc,
 		bool mandatory)
@@ -504,14 +421,136 @@ namespace argstream
 	template<typename CHARTYPE, typename T>
 	inline typename TSTR<CHARTYPE>::type ValueHolder<CHARTYPE, T>::description() const
 	{
-		return description_policy<CHARTYPE, T>::execute(this);
+		return description_;
+	}
+
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Interface of CopyrightHolder<CHARTYPE>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template <typename CHARTYPE>
+	class CopyrightHolder
+	{
+	public:
+		inline CopyrightHolder(const CHARTYPE* copyright);
+		inline typename TSTR<CHARTYPE>::type copyright() const;
+		template<typename CHARTYPE>
+		friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s, const CopyrightHolder<CHARTYPE>& e);
+	private:
+		typename TSTR<CHARTYPE>::type copyright_;
+	};
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Implementation of CopyrightHolder<CHARTYPE>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template<typename CHARTYPE>
+	inline CopyrightHolder<CHARTYPE>::CopyrightHolder(const CHARTYPE* copyright)
+		:copyright_(copyright)
+	{
+	}
+
+	template<typename CHARTYPE>
+	inline typename TSTR<CHARTYPE>::type CopyrightHolder<CHARTYPE>::copyright() const
+	{
+		return copyright_;
+	}
+
+	template<typename CHARTYPE>
+	inline argstream<CHARTYPE>&	operator>>(argstream<CHARTYPE>& s,const CopyrightHolder<CHARTYPE>& v)
+	{
+		s.copyright_ = v.copyright();
+		return s;
 	}
 	
-	//************************************************************
-	// Implementation of OptionHolder
-	//************************************************************
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Interface of ExampleHolder<CHARTYPE>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template <typename CHARTYPE>
+	class ExampleHolder
+	{
+	public:
+		ExampleHolder(const CHARTYPE* cmdline, const CHARTYPE* desc);
+		typename TSTR<CHARTYPE>::type cmdline() const;
+		typename TSTR<CHARTYPE>::type description() const;
+		template<typename CHARTYPE>
+		friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s, const ExampleHolder<CHARTYPE>& e);
+	private:
+		typename TSTR<CHARTYPE>::type cmdline_;
+		typename TSTR<CHARTYPE>::type description_;
+	};
+	
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Implementation of ExampleHolder<CHARTYPE>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	template<typename CHARTYPE>
-	inline OptionHolder<CHARTYPE>::OptionHolder(CHARTYPE s,
+	ExampleHolder<CHARTYPE>::ExampleHolder(const CHARTYPE* cmdline, const CHARTYPE* desc)
+		:cmdline_(cmdline), description_(desc)
+	{
+	}
+
+	template<typename CHARTYPE>
+	typename TSTR<CHARTYPE>::type ExampleHolder<CHARTYPE>::cmdline() const 
+	{ 
+		return cmdline_;
+	}
+
+	template<typename CHARTYPE>
+	typename TSTR<CHARTYPE>::type ExampleHolder<CHARTYPE>::description() const 
+	{ 
+		return description_;
+	}
+
+	template<typename CHARTYPE>
+	inline argstream<CHARTYPE>&	operator>>(argstream<CHARTYPE>& s,const ExampleHolder<CHARTYPE>& v)
+	{
+		s.argExamples_.push_back(argstream<CHARTYPE>::example_entry(v.cmdline(), v.description()));
+		return s;
+	}
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Interface of OptionHolder<CHARTYPE>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template <typename CHARTYPE>
+	class OptionHolder
+	{
+	public:
+		inline OptionHolder(
+			CHARTYPE s, 
+			const CHARTYPE* l, 
+			bool& b, 
+			const CHARTYPE* desc);
+		inline OptionHolder(
+			const CHARTYPE* l,
+			bool& b,
+			const CHARTYPE* desc);
+		inline OptionHolder(
+			CHARTYPE s,
+			bool& b,
+			const CHARTYPE* desc);
+		inline typename TSTR<CHARTYPE>::type name() const;
+		inline typename TSTR<CHARTYPE>::type description() const;
+
+		template<typename CHARTYPE>
+		friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const OptionHolder<CHARTYPE>& v);
+	protected:
+		inline OptionHolder(CHARTYPE s,
+			const CHARTYPE* l,
+			const CHARTYPE* desc);
+
+		template<typename CHARTYPE>
+		friend OptionHolder<CHARTYPE> help();
+	private:
+		typename TSTR<CHARTYPE>::type shortName_;
+		typename TSTR<CHARTYPE>::type longName_;
+		bool* value_;
+		typename TSTR<CHARTYPE>::type description_;  
+	};
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Implementation of OptionHolder<CHARTYPE>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template<typename CHARTYPE>
+	inline OptionHolder<CHARTYPE>::OptionHolder(
+		CHARTYPE s,
 		const CHARTYPE* l,
 		bool& b,
 		const CHARTYPE* desc)
@@ -523,7 +562,8 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE>
-	inline OptionHolder<CHARTYPE>::OptionHolder(const CHARTYPE* l,
+	inline OptionHolder<CHARTYPE>::OptionHolder(
+		const CHARTYPE* l,
 		bool& b,
 		const CHARTYPE* desc)
 		: longName_(l),
@@ -533,7 +573,8 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE>
-	inline OptionHolder<CHARTYPE>::OptionHolder(CHARTYPE s,
+	inline OptionHolder<CHARTYPE>::OptionHolder(
+		CHARTYPE s,
 		bool& b,
 		const CHARTYPE* desc)
 		: shortName_(1,s),
@@ -543,7 +584,8 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE>
-	inline OptionHolder<CHARTYPE>::OptionHolder(CHARTYPE s,
+	inline OptionHolder<CHARTYPE>::OptionHolder(
+		CHARTYPE s,
 		const CHARTYPE* l,
 		const CHARTYPE* desc)
 		: shortName_(1,s),
@@ -571,11 +613,35 @@ namespace argstream
 	{
 		return description_;
 	}
-	//************************************************************
-	// Implementation of ValuesHolder<T,O>
-	//************************************************************
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Interface of ValuesHolder<CHARTYPE, T, O>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	template<typename CHARTYPE, typename T, typename O>
-	ValuesHolder<CHARTYPE, T, O>::ValuesHolder(const O& o,
+	class ValuesHolder
+	{
+	public:
+		ValuesHolder(const O& o,
+			const CHARTYPE* desc,
+			int len);
+		template<typename CHARTYPE, typename T, typename O>
+		friend argstream& operator>><CHARTYPE, T, O>(argstream& s, const ValuesHolder<CHARTYPE, T, O>& v);
+		typename TSTR<CHARTYPE>::type name() const;
+		typename TSTR<CHARTYPE>::type description() const;
+		typedef T value_type;
+	private:
+		mutable O   value_;
+		typename TSTR<CHARTYPE>::type description_;
+		int len_;
+		CHARTYPE letter_;
+	};
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Implementation of ValuesHolder<CHARTYPE, T, O>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template<typename CHARTYPE, typename T, typename O>
+	ValuesHolder<CHARTYPE, T, O>::ValuesHolder(
+		const O& o,
 		const CHARTYPE* desc,
 		int len)
 		: value_(o),
@@ -584,21 +650,179 @@ namespace argstream
 	{
 		letter_ = argstream::uniqueLetter();
 	}
+
 	template <typename CHARTYPE, typename T, typename O>
-	typename TSTR<CHARTYPE>::type ValuesHolder<CHARTYPE, T, O>::name() const
+	typename TSTR<CHARTYPE>::type 
+	ValuesHolder<CHARTYPE, T, O>::name() const
 	{
 		TSTRSTREAM<CHARTYPE>::O os;
 		os<< letter_ <<TSTR<CHARTYPE>::ToString("i");
 		return os.str();
 	}
+
 	template <typename CHARTYPE, typename T, typename O>
-	typename TSTR<CHARTYPE>::type ValuesHolder<CHARTYPE, T, O>::description() const
+	typename TSTR<CHARTYPE>::type 
+	ValuesHolder<CHARTYPE, T, O>::description() const
 	{
 		return description_;
 	}
-	//************************************************************
-	// Implementation of argstream
-	//************************************************************
+
+	template<typename CHARTYPE, typename T, typename O>
+	argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ValuesHolder<CHARTYPE,T,O>& v)
+	{
+		s.argHelps_.push_back(argstream::help_entry(v.name(),v.description()));
+		{
+			STRSTREAM<CHARTYPE>::O os;
+			os<<' '<<v.letter_<<'1';
+			switch (v.len_)
+			{
+			case -1:
+				os<< TSTR<CHARTYPE>::ToString("...");
+				break;
+			case 1:
+				break;
+			default:
+				os<< TSTR<CHARTYPE>::ToString("...") << v.letter_ << v.len_;
+				break;
+			}
+			s.cmdLine_ += os.str();
+		}
+		std::list<TSTR<CHARTYPE>::type>::iterator first = s.values_.begin();
+		// We add to the iterator as much values as we can, limited to the length
+		// specified (if different of -1)
+		int n = v.len_ != -1?v.len_:s.values_.size();
+		while (first != s.values_.end() && n-->0)
+		{
+			// Read the value from the string *first
+			ValueParser<CHARTYPE, T> p;
+			*(v.value_++) = p(*first );
+			s.argHelps_.push_back(argstream::help_entry(v.name(),v.description()));
+			// The value we just removed was maybe "remembered" by an option so we
+			// remove it now.
+			for (std::map<typename TSTR<CHARTYPE>::type, typename argstream<CHARTYPE>::value_iterator>::iterator
+				jter = s.options_.begin();jter != s.options_.end();++jter)
+			{
+				if (jter->second == first)
+				{
+					jter->second = s.values_.end();
+				}
+			}
+			++first;
+		}
+		// Check if we have enough values
+		if (n != 0)
+		{
+			s.isOk_ = false;
+			typename TSTRSTREAM<CHARTYPE>::O os;
+			os<<TSTR<CHARTYPE>::ToString("Expecting ")<<v.len_<<TSTR<CHARTYPE>::ToString(" values");
+			s.errors_.push_back(os.str());
+		}
+		// Erase the values parsed
+		s.values_.erase(s.values_.begin(),first);
+		return s;
+	}
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Interface of ValueParser<CHARTYPE, T>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template<typename CHARTYPE, typename T>
+	class ValueParser
+	{
+	public:
+		inline T operator()(const typename T& s) const;
+	};
+
+	template<typename CHARTYPE>
+	class ValueParser<CHARTYPE, typename TSTR<CHARTYPE>::type>
+	{
+	public:
+		inline typename TSTR<CHARTYPE>::type 
+		operator()(const typename TSTR<CHARTYPE>::type& s) const;
+	};
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Implementation of ValueParser<CHARTYPE, T>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template<typename CHARTYPE, typename T>
+	inline typename T ValueParser<CHARTYPE, T>::operator()(const T& s) const
+	{
+		typename TSTRSTREAM<CHARTYPE>::I is(s);
+		T t;
+		is>>t;
+		return t;
+	}
+	
+	// Implementation of partial specialization for TSTR<CHARTYPE> because
+	// string stream couldn't handle string which contains white space.
+	template<typename CHARTYPE>
+	inline typename TSTR<CHARTYPE>::type 
+	ValueParser<CHARTYPE, typename TSTR<CHARTYPE>::type>::operator()(const typename TSTR<CHARTYPE>::type& s) const
+	{
+		return s;
+	}
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Interface of argstream<CHARTYPE>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template<typename CHARTYPE>
+	class argstream
+	{
+	public:
+		inline argstream<CHARTYPE>(int argc,CHARTYPE** argv);
+		inline argstream<CHARTYPE>(const CHARTYPE* c);
+
+		template<typename CHARTYPE, typename T> 
+		friend argstream<CHARTYPE>& operator>>(
+			argstream<CHARTYPE>& s,
+			const ValueHolder<CHARTYPE, T>& v);
+
+		template<typename CHARTYPE> 
+		friend inline argstream<CHARTYPE>& operator>>(
+			argstream<CHARTYPE>& s,
+			const OptionHolder<CHARTYPE>& v);
+
+		template<typename CHARTYPE, typename T, typename O> 
+		friend argstream<CHARTYPE>& operator>>(
+			argstream<CHARTYPE>& s,
+			const ValuesHolder<CHARTYPE, T,O>& v);
+
+		template<typename CHARTYPE> 
+		friend inline argstream<CHARTYPE>& operator>>(
+			argstream<CHARTYPE>& s,
+			const ExampleHolder<CHARTYPE>& v);
+
+		template<typename CHARTYPE> 
+		friend inline argstream<CHARTYPE>& operator>>(
+			argstream<CHARTYPE>& s,
+			const CopyrightHolder<CHARTYPE>& v);
+
+		inline bool helpRequested() const;
+		inline bool isOk() const;
+		inline typename TSTR<CHARTYPE>::type errorLog() const;
+		inline typename TSTR<CHARTYPE>::type usage() const;
+		inline void defaultErrorHandling(bool ignoreUnused=false) const;
+		static inline CHARTYPE uniqueLetter();
+	protected:
+		void parse(int argc, CHARTYPE** argv);
+	private:
+		typedef typename std::list<typename TSTR<CHARTYPE>::type>::iterator value_iterator;
+		typedef typename std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type> help_entry;
+		typedef typename std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type> example_entry;
+		typename TSTR<CHARTYPE>::type progName_;
+		std::map<typename TSTR<CHARTYPE>::type, value_iterator> options_;
+		std::list<typename TSTR<CHARTYPE>::type> values_;
+		bool minusActive_;
+		bool isOk_;
+		std::deque<std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type>> argHelps_;
+		std::deque<std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type>> argExamples_;
+		typename TSTR<CHARTYPE>::type cmdLine_;
+		typename TSTR<CHARTYPE>::type copyright_;
+		std::deque<typename TSTR<CHARTYPE>::type> errors_;
+		bool helpRequested_;
+	};
+	
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Implementation of argstream<CHARTYPE>
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	template<typename CHARTYPE>
 	inline argstream<CHARTYPE>::argstream(int argc,CHARTYPE** argv)
 		: progName_(),
@@ -644,7 +868,7 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE>
-	inline void	argstream<CHARTYPE>::parse(int argc,CHARTYPE** argv)
+	inline void	argstream<CHARTYPE>::parse(int argc, CHARTYPE** argv)
 	{
 		// Run thru all arguments.
 		// * it has -- in front : it is a long name option, if remainder is empty,
@@ -748,19 +972,22 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE>
-	inline bool	argstream<CHARTYPE>::isOk() const
+	inline bool	
+	argstream<CHARTYPE>::isOk() const
 	{
 		return isOk_;
 	}
 
 	template<typename CHARTYPE>
-	inline bool	argstream<CHARTYPE>::helpRequested() const
+	inline bool	
+	argstream<CHARTYPE>::helpRequested() const
 	{
 		return helpRequested_;
 	}
 
 	template<typename CHARTYPE>
-	inline typename TSTR<CHARTYPE>::type argstream<CHARTYPE>::usage() const
+	inline typename TSTR<CHARTYPE>::type 
+	argstream<CHARTYPE>::usage() const
 	{
 		typename TSTRSTREAM<CHARTYPE>::O os;
 		if (copyright_.size())
@@ -801,7 +1028,8 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE>
-	inline typename TSTR<CHARTYPE>::type argstream<CHARTYPE>::errorLog() const
+	inline typename TSTR<CHARTYPE>::type 
+	argstream<CHARTYPE>::errorLog() const
 	{
 		typename TSTR<CHARTYPE>::type s;
 		for(std::deque<typename TSTR<CHARTYPE>::type>::const_iterator iter = errors_.begin();
@@ -813,6 +1041,9 @@ namespace argstream
 		return s;
 	}
 
+	/**
+		@todo It seems not good.
+	*/
 	template<typename CHARTYPE>
 	inline CHARTYPE
 		argstream<CHARTYPE>::uniqueLetter()
@@ -820,8 +1051,67 @@ namespace argstream
 		static unsigned int c = 'a';
 		return c++;
 	}
+
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Implementation of global functions
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	template <typename CHARTYPE, typename T>
+	inline ValueHolder<CHARTYPE, T>
+	parameter(
+		CHARTYPE s,
+		const CHARTYPE* l,
+		T& b,
+		const CHARTYPE* desc,
+		bool mandatory)
+	{
+		return ValueHolder<CHARTYPE, T>(s,l,b,desc,mandatory);
+	}
+
+	template<typename CHARTYPE, typename T, typename O>
+	inline ValuesHolder<CHARTYPE, T, O>
+	values(
+		const O& o,
+		const CHARTYPE* desc,
+		int len)
+	{
+		return ValuesHolder<CHARTYPE, T, O>(o, desc, len);
+	}
+
+	template<typename CHARTYPE>
+	inline OptionHolder<CHARTYPE> 
+	option(
+		CHARTYPE s,
+		const CHARTYPE* l,
+		bool& b,
+		const CHARTYPE* desc)
+	{
+		return OptionHolder<CHARTYPE>(s, l, b, desc);
+	}
+	template<typename CHARTYPE>
+	inline OptionHolder<CHARTYPE> 
+	help()
+	{
+		return OptionHolder<CHARTYPE>(DEFAULT<CHARTYPE>::GetHelpShortName(), DEFAULT<CHARTYPE>::GetHelpLongName(), DEFAULT<CHARTYPE>::GetHelpDesc());
+	}
+
+	template<typename CHARTYPE>
+	inline ExampleHolder<CHARTYPE> 
+	example(const CHARTYPE* cmdline, const CHARTYPE* desc)
+	{
+		return ExampleHolder<CHARTYPE>(cmdline, desc);
+	}
+	
+	template<typename CHARTYPE>
+	inline CopyrightHolder<CHARTYPE> 
+	copyright(const CHARTYPE* copyright)
+	{
+		return CopyrightHolder<CHARTYPE>(copyright);
+	}
+
 	template<typename CHARTYPE, typename T>
-	argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ValueHolder<CHARTYPE, T>& v)
+	argstream<CHARTYPE>& 
+	operator>>(argstream<CHARTYPE>& s,const ValueHolder<CHARTYPE, T>& v)
 	{
 		// Search in the options if there is any such option defined either with a
 		// short name or a long name. If both are found, only the last one is
@@ -926,7 +1216,8 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE, typename T>
-	argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ValueHolder<CHARTYPE, bool>& v)
+	argstream<CHARTYPE>& 
+	operator>>(argstream<CHARTYPE>& s,const ValueHolder<CHARTYPE, bool>& v)
 	{
 		// Search in the options if there is any such option defined either with a
 		// short name or a long name. If both are found, only the last one is
@@ -1025,22 +1316,11 @@ namespace argstream
 		}
 		return s;
 	}
-	template<typename CHARTYPE>
-	inline argstream<CHARTYPE>&	operator>>(argstream<CHARTYPE>& s,const CopyrightHolder<CHARTYPE>& v)
-	{
-		s.copyright_ = v.copyright();
-		return s;
-	}
+
 
 	template<typename CHARTYPE>
-	inline argstream<CHARTYPE>&	operator>>(argstream<CHARTYPE>& s,const ExampleHolder<CHARTYPE>& v)
-	{
-		s.argExamples_.push_back(argstream<CHARTYPE>::example_entry(v.cmdline(), v.description()));
-		return s;
-	}
-
-	template<typename CHARTYPE>
-	inline argstream<CHARTYPE>&	operator>>(argstream<CHARTYPE>& s,const OptionHolder<CHARTYPE>& v)
+	inline argstream<CHARTYPE>&	
+	operator>>(argstream<CHARTYPE>& s,const OptionHolder<CHARTYPE>& v)
 	{
 		// Search in the options if there is any such option defined either with a
 		// short name or a long name. If both are found, only the last one is
@@ -1101,64 +1381,9 @@ namespace argstream
 		return s;
 	}
 
-	template<typename CHARTYPE, typename T, typename O>
-	argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ValuesHolder<CHARTYPE,T,O>& v)
-	{
-		s.argHelps_.push_back(argstream::help_entry(v.name(),v.description()));
-		{
-			STRSTREAM<CHARTYPE>::O os;
-			os<<' '<<v.letter_<<'1';
-			switch (v.len_)
-			{
-			case -1:
-				os<< TSTR<CHARTYPE>::ToString("...");
-				break;
-			case 1:
-				break;
-			default:
-				os<< TSTR<CHARTYPE>::ToString("...") << v.letter_ << v.len_;
-				break;
-			}
-			s.cmdLine_ += os.str();
-		}
-		std::list<TSTR<CHARTYPE>::type>::iterator first = s.values_.begin();
-		// We add to the iterator as much values as we can, limited to the length
-		// specified (if different of -1)
-		int n = v.len_ != -1?v.len_:s.values_.size();
-		while (first != s.values_.end() && n-->0)
-		{
-			// Read the value from the string *first
-			ValueParser<CHARTYPE, T> p;
-			*(v.value_++) = p(*first );
-			s.argHelps_.push_back(argstream::help_entry(v.name(),v.description()));
-			// The value we just removed was maybe "remembered" by an option so we
-			// remove it now.
-			for (std::map<typename TSTR<CHARTYPE>::type, typename argstream<CHARTYPE>::value_iterator>::iterator
-				jter = s.options_.begin();jter != s.options_.end();++jter)
-			{
-				if (jter->second == first)
-				{
-					jter->second = s.values_.end();
-				}
-			}
-			++first;
-		}
-		// Check if we have enough values
-		if (n != 0)
-		{
-			s.isOk_ = false;
-			typename TSTRSTREAM<CHARTYPE>::O os;
-			os<<TSTR<CHARTYPE>::ToString("Expecting ")<<v.len_<<TSTR<CHARTYPE>::ToString(" values");
-			s.errors_.push_back(os.str());
-		}
-		// Erase the values parsed
-		s.values_.erase(s.values_.begin(),first);
-		return s;
-	}
-
 	template<typename CHARTYPE>
 	inline void
-		argstream<CHARTYPE>::defaultErrorHandling(bool ignoreUnused) const
+	argstream<CHARTYPE>::defaultErrorHandling(bool ignoreUnused) const
 	{
 		if (helpRequested_)
 		{
@@ -1190,5 +1415,6 @@ namespace argstream
 		}
 	}
 };
+
 #endif // ARGSTREAM_H
 
