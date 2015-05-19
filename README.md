@@ -1,5 +1,5 @@
 # argstream
-The purpose of this mod of [argstream](http://maverick.inria.fr/Membres/Xavier.Decoret/resources/argstream/index.html) is to extend argstream and support both char and wchar_t string.
+The purpose of this mod of [argstream](http://maverick.inria.fr/Membres/Xavier.Decoret/resources/argstream/index.html) is to extend argstream and support both char and wchar_t string, and add some useful extension such as `argstream::copyrigh()` and `argstream::example()`
 
 ## Usage
 
@@ -37,4 +37,4 @@ int _tmain(int argc, _TCHAR* argv[])
 	return 0;
 }
 ```
-Hope this mod is useful for you :-)
+For more usage examples, please refer to the unit test file `test.cpp`. Hope this mod is useful for you :-)

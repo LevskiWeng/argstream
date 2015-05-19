@@ -39,10 +39,19 @@
 #include <codecvt>
 #include <type_traits>
 #include <cassert>
+#include <memory>
 
 namespace argstream
 {
 	//--------------------------------------------------------------------------
+
+	typedef enum { 
+		PARSED_OK = 0,
+		PARSED_ERR_HELP_REQUESTED,
+		PARSED_ERR_UNUSED_PARAMETER,
+		PARSED_ERR_OTHER
+	} RESULT_OF_PARSE;
+
 	/**
 		Main class to store the argument string.
 	*/
@@ -108,18 +117,11 @@ namespace argstream
 	inline ValueHolder<CHARTYPE, T>
 	parameter(CHARTYPE s, const CHARTYPE* l, T& b, const CHARTYPE* desc, bool mandatory = true);
 
-	/**
-		Store multi values.
-
-		@param o Value holder. 
-		@param desc Description of the values.
-		@param len The length of the values.
-
-		@return Return values.
-	*/
+	/* Disable it temporarily
 	template<typename CHARTYPE, typename T, typename O>
 	inline ValuesHolder<CHARTYPE, T, O>
 	values(const O& o, const CHARTYPE* desc, int len=-1);
+	*/
 
 	/**
 		Generate the option.
@@ -307,6 +309,7 @@ namespace argstream
 	{
 		typedef std::basic_istringstream<CHARTYPE, std::char_traits<CHARTYPE>,std::allocator<CHARTYPE>> I;
 		typedef std::basic_ostringstream<CHARTYPE, std::char_traits<CHARTYPE>, std::allocator<CHARTYPE>> O;
+		typedef std::basic_ostream<CHARTYPE, std::char_traits<CHARTYPE> > COUT;
 	};
 
 	/**
@@ -613,7 +616,8 @@ namespace argstream
 	{
 		return description_;
 	}
-
+	
+	/* ValusesHolder is not used currently, disable it temporarily
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Interface of ValuesHolder<CHARTYPE, T, O>
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -721,15 +725,21 @@ namespace argstream
 		s.values_.erase(s.values_.begin(),first);
 		return s;
 	}
-
+	*/
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	// Interface of ValueParser<CHARTYPE, T>
+	// Interface and implementation of ValueParser<CHARTYPE, T>
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	template<typename CHARTYPE, typename T>
 	class ValueParser
 	{
 	public:
-		inline T operator()(const typename T& s) const;
+		inline T operator()(const typename TSTR<CHARTYPE>::type& s) const
+		{
+			typename TSTRSTREAM<CHARTYPE>::I is(s);
+			T t;
+			is>>t;
+			return t;
+		}
 	};
 
 	template<typename CHARTYPE>
@@ -737,28 +747,11 @@ namespace argstream
 	{
 	public:
 		inline typename TSTR<CHARTYPE>::type 
-		operator()(const typename TSTR<CHARTYPE>::type& s) const;
+		operator()(const typename TSTR<CHARTYPE>::type& s) const
+		{
+			return s;
+		}
 	};
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	// Implementation of ValueParser<CHARTYPE, T>
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	template<typename CHARTYPE, typename T>
-	inline typename T ValueParser<CHARTYPE, T>::operator()(const T& s) const
-	{
-		typename TSTRSTREAM<CHARTYPE>::I is(s);
-		T t;
-		is>>t;
-		return t;
-	}
-	
-	// Implementation of partial specialization for TSTR<CHARTYPE> because
-	// string stream couldn't handle string which contains white space.
-	template<typename CHARTYPE>
-	inline typename TSTR<CHARTYPE>::type 
-	ValueParser<CHARTYPE, typename TSTR<CHARTYPE>::type>::operator()(const typename TSTR<CHARTYPE>::type& s) const
-	{
-		return s;
-	}
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Interface of argstream<CHARTYPE>
@@ -799,23 +792,24 @@ namespace argstream
 		inline bool isOk() const;
 		inline typename TSTR<CHARTYPE>::type errorLog() const;
 		inline typename TSTR<CHARTYPE>::type usage() const;
-		inline void defaultErrorHandling(bool ignoreUnused=false) const;
-		static inline CHARTYPE uniqueLetter();
+		inline RESULT_OF_PARSE defaultErrorHandling(bool ignoreUnused=false) const;
 	protected:
 		void parse(int argc, CHARTYPE** argv);
 	private:
+		typedef typename CHARTYPE* PCHARTYPE;
 		typedef typename std::list<typename TSTR<CHARTYPE>::type>::iterator value_iterator;
 		typedef typename std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type> help_entry;
 		typedef typename std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type> example_entry;
 		typename TSTR<CHARTYPE>::type progName_;
+		typename TSTR<CHARTYPE>::type cmdLine_;
+		typename TSTR<CHARTYPE>::type copyright_;
 		std::map<typename TSTR<CHARTYPE>::type, value_iterator> options_;
 		std::list<typename TSTR<CHARTYPE>::type> values_;
 		bool minusActive_;
 		bool isOk_;
+		std::unique_ptr<PCHARTYPE> argv_from_cmdline_;
 		std::deque<std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type>> argHelps_;
 		std::deque<std::pair<typename TSTR<CHARTYPE>::type, typename TSTR<CHARTYPE>::type>> argExamples_;
-		typename TSTR<CHARTYPE>::type cmdLine_;
-		typename TSTR<CHARTYPE>::type copyright_;
 		std::deque<typename TSTR<CHARTYPE>::type> errors_;
 		bool helpRequested_;
 	};
@@ -828,6 +822,7 @@ namespace argstream
 		: progName_(),
 		minusActive_(true),
 		isOk_(true),
+		argv_from_cmdline_(nullptr),
 		helpRequested_(false)
 	{
 		typename TSTR<CHARTYPE>::type argv0(argv[0]);
@@ -841,13 +836,14 @@ namespace argstream
 		: progName_(TSTR<CHARTYPE>::ToString("")),
 		minusActive_(true),
 		isOk_(true),
+		argv_from_cmdline_(nullptr),
 		helpRequested_(false)
 	{
 		typename TSTR<CHARTYPE>::type s(c);
 		// Build argc, argv from s. We must add a dummy first element for
 		// progName because parse() expects it!!
 		std::deque<typename TSTR<CHARTYPE>::type> args;
-		args.push_back(TSTR<CHARTYPE>::ToString(""));
+		//args.push_back(TSTR<CHARTYPE>::ToString(""));
 		typename TSTRSTREAM<CHARTYPE>::I is(s);
 		while (is.good())
 		{
@@ -855,16 +851,16 @@ namespace argstream
 			is>>t;
 			args.push_back(t);
 		}
-		CHARTYPE* pargs = new CHARTYPE[args.size()];
-		CHARTYPE** p = &pargs;
+
+		argv_from_cmdline_.reset(new PCHARTYPE[args.size()]);
+		PCHARTYPE* p = argv_from_cmdline_.get();
 		for (std::deque<typename TSTR<CHARTYPE>::type>::const_iterator
 			iter = args.begin();
 			iter != args.end();++iter)
 		{
-			*p++ = const_cast<_TCHAR*>(iter->c_str());
+			*p++ = const_cast<typename CHARTYPE*>(iter->c_str());
 		}
-		parse(args.size(), &pargs);
-		delete[] pargs;
+		parse(args.size(), argv_from_cmdline_.get());
 	}
 
 	template<typename CHARTYPE>
@@ -944,29 +940,17 @@ namespace argstream
 		for (std::map<_TSTRING,value_iterator>::const_iterator
 			iter = options_.begin();iter != options_.end();++iter)
 		{
-#ifdef _UNICODE
-			std::wcout<<L"DEBUG: option "<<iter->first;
-#else
-			std::cout<<"DEBUG: option "<<iter->first;
-#endif
+			TSTREAM<CHARTYPE>::COUT << TSTR<CHARTYPE>::ToString("DEBUG: option ") << iter->first;
 			if (iter->second != values_.end())
 			{
-#ifdef _UNICODE
-				std::wcout<<L" -> "<<*(iter->second);
-#else
-				std::cout<<" -> "<<*(iter->second);
-#endif
+				TSTREAM<CHARTYPE>::COUT << TSTR<CHARTYPE>::ToString(" -> ") << *(iter->second);
 			}
 			std::cout<<std::endl;
 		}
 		for (std::list<_TSTRING>::const_iterator
 			iter = values_.begin();iter != values_.end();++iter)
 		{
-#ifdef _UNICODE
-			std::wcout<<L"DEBUG: value  "<<*iter<<std::endl;
-#else
-			std::cout<<"DEBUG: value  "<<*iter<<std::endl;
-#endif
+			TSTREAM<CHARTYPE>::COUT << TSTR<CHARTYPE>::ToString("DEBUG: value ") << *iter << std::endl;
 		}
 #endif // ARGSTREAM_DEBUG
 	}
@@ -1041,17 +1025,25 @@ namespace argstream
 		return s;
 	}
 
-	/**
-		@todo It seems not good.
-	*/
 	template<typename CHARTYPE>
-	inline CHARTYPE
-		argstream<CHARTYPE>::uniqueLetter()
+	inline RESULT_OF_PARSE
+	argstream<CHARTYPE>::defaultErrorHandling(bool ignoreUnused) const
 	{
-		static unsigned int c = 'a';
-		return c++;
+		if (helpRequested_)
+		{
+			return RESULT_OF_PARSE::PARSED_ERR_HELP_REQUESTED;
+		}
+		if (!isOk_)
+		{
+			return RESULT_OF_PARSE::PARSED_ERR_OTHER;
+		}
+		if (!ignoreUnused &&
+			(!values_.empty() || !options_.empty()))
+		{
+			return RESULT_OF_PARSE::PARSED_ERR_UNUSED_PARAMETER;
+		}
+		return RESULT_OF_PARSE::PARSED_OK;
 	}
-
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Implementation of global functions
@@ -1068,6 +1060,7 @@ namespace argstream
 		return ValueHolder<CHARTYPE, T>(s,l,b,desc,mandatory);
 	}
 
+	/*
 	template<typename CHARTYPE, typename T, typename O>
 	inline ValuesHolder<CHARTYPE, T, O>
 	values(
@@ -1077,6 +1070,7 @@ namespace argstream
 	{
 		return ValuesHolder<CHARTYPE, T, O>(o, desc, len);
 	}
+	*/
 
 	template<typename CHARTYPE>
 	inline OptionHolder<CHARTYPE> 
@@ -1117,11 +1111,8 @@ namespace argstream
 		// short name or a long name. If both are found, only the last one is
 		// used.
 #ifdef ARGSTREAM_DEBUG    
-#ifdef _UNICODE
-		std::wcout<<L"DEBUG: searching "<<v.shortName_<<L" "<<v.longName_<<std::endl;
-#else
-		std::cout<<"DEBUG: searching "<<v.shortName_<<" "<<v.longName_<<std::endl;
-#endif
+		TSTRSTREAM<CHARTYPE>::COUT << TSTR<CHARTYPE>::ToString("DEBUG: searching ") 
+			<< v.shortName_<<L" "<<v.longName_<<std::endl;
 #endif    
 		s.argHelps_.push_back(argstream<CHARTYPE>::help_entry(v.name(),v.description()));
 		if (v.mandatory_)
@@ -1163,19 +1154,17 @@ namespace argstream
 			if (iter->second != s.values_.end())
 			{
 #ifdef ARGSTREAM_DEBUG
-#ifdef _UNICODE
-				std::wcout<<L"DEBUG: found value "<<*(iter->second)<<std::endl;
-#else
-				std::cout<<"DEBUG: found value "<<*(iter->second)<<std::endl;
-#endif
+				TSTRSTREAM<CHARTYPE>::COUT << TSTR<CHARTYPE>::ToString("DEBUG: found value ") 
+					<< *(iter->second)<<std::endl;
 #endif	
 				ValueParser<CHARTYPE, T> p;
 				*(v.value_) = p(*(iter->second));
 				// The option and its associated value are removed, the subtle thing
 				// is that someother options might have this associated value too,
 				// which we must invalidate.
-				// Modified by Levski Weng
-				//s.values_.erase(iter->second);      
+				s.values_.erase(iter->second);
+				
+				/* Disabled by Levski Weng, if one item of the values_ is removed, you cannot compare them any more.
 				for (std::map<typename TSTR<CHARTYPE>::type, typename argstream<CHARTYPE>::value_iterator>::iterator
 					jter = s.options_.begin();jter != s.options_.end();++jter)
 				{
@@ -1184,6 +1173,7 @@ namespace argstream
 						jter->second = s.values_.end();
 					}
 				}
+				*/
 				s.options_.erase(iter);
 			}
 			else
@@ -1223,11 +1213,8 @@ namespace argstream
 		// short name or a long name. If both are found, only the last one is
 		// used.
 #ifdef ARGSTREAM_DEBUG    
-#ifdef _UNICODE
-		std::wcout<<L"DEBUG: searching "<<v.shortName_<<L" "<<v.longName_<<std::endl;
-#else
-		std::cout<<"DEBUG: searching "<<v.shortName_<<" "<<v.longName_<<std::endl;
-#endif
+		TSTRSTREAM<CHARTYPE>::COUT << TSTR<CHARTYPE>::ToString("DEBUG: searching ") 
+			<< v.shortName_<<L" "<<v.longName_<<std::endl;
 #endif    
 		s.argHelps_.push_back(argstream<CHARTYPE>::help_entry(v.name(),v.description()));
 		if (v.mandatory_)
@@ -1269,11 +1256,8 @@ namespace argstream
 			if (iter->second != s.values_.end())
 			{
 #ifdef ARGSTREAM_DEBUG
-#ifdef _UNICODE
-				std::wcout<<L"DEBUG: found value "<<*(iter->second)<<std::endl;
-#else
-				std::cout<<"DEBUG: found value "<<*(iter->second)<<std::endl;
-#endif
+				TSTRSTREAM<CHARTYPE>::COUT << TSTR<CHARTYPE>::ToString("DEBUG: found value ") 
+					<< *(iter->second)<<std::endl;
 #endif	
 				ValueParser<CHARTYPE, T> p;
 				*(v.value_) = p(*(iter->second));
@@ -1326,11 +1310,8 @@ namespace argstream
 		// short name or a long name. If both are found, only the last one is
 		// used.
 #ifdef ARGSTREAM_DEBUG    
-#ifdef _UNICODE
-		std::wcout<<L"DEBUG: searching "<<v.shortName_<<L" "<<v.longName_<<std::endl;
-#else
-		std::cout<<"DEBUG: searching "<<v.shortName_<<" "<<v.longName_<<std::endl;
-#endif
+		TSTRSTREAM<CHARTYPE>::COUT << TSTR<CHARTYPE>::ToString("DEBUG: found value ") 
+			<< v.shortName_<<L" "<<v.longName_<<std::endl;
 #endif
 		s.argHelps_.push_back(argstream<CHARTYPE>::help_entry(v.name(),v.description()));
 		{
@@ -1381,39 +1362,6 @@ namespace argstream
 		return s;
 	}
 
-	template<typename CHARTYPE>
-	inline void
-	argstream<CHARTYPE>::defaultErrorHandling(bool ignoreUnused) const
-	{
-		if (helpRequested_)
-		{
-#ifdef _UNICODE
-			std::wcout<<usage();
-#else
-			std::cout<<usage();
-#endif
-			exit(1);
-		}
-		if (!isOk_)
-		{
-#ifdef _UNICODE
-			std::wcerr<<errorLog();
-#else
-			std::cerr<<errorLog();
-#endif
-			exit(1);
-		}
-		if (!ignoreUnused &&
-			(!values_.empty() || !options_.empty()))
-		{
-#ifdef _UNICODE
-			std::wcerr<<L"Unused arguments"<<std::endl;
-#else
-			std::cerr<<"Unused arguments"<<std::endl;
-#endif
-			exit(1);
-		}
-	}
 };
 
 #endif // ARGSTREAM_H
