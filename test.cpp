@@ -1,4 +1,6 @@
+#ifdef WIN32
 #include <Windows.h>
+#endif
 #include <iostream>
 #include <string>
 #include "argstream.h"
@@ -6,19 +8,35 @@
 using namespace std;
 enum color
 {
-	red=FOREGROUND_RED|FOREGROUND_INTENSITY,
-	green=FOREGROUND_GREEN|FOREGROUND_INTENSITY,
-	blue=FOREGROUND_BLUE|FOREGROUND_INTENSITY,
-	yellow=FOREGROUND_GREEN|FOREGROUND_RED|FOREGROUND_INTENSITY,
-	white=FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE
+#ifdef WIN32
+	red		= FOREGROUND_RED | FOREGROUND_INTENSITY,
+	green	= FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+	blue	= FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+	yellow	= FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY,
+	white	= FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
+#else
+	red		= 31,
+	green	= 32,
+	blue	= 34,
+	yellow	= 33,
+	white	= 0
+#endif
 };
 
 template <class _Elem, class _Traits>
 std::basic_ostream<_Elem,_Traits>& 
 operator<<(std::basic_ostream<_Elem,_Traits>& i, const color& c)
 {
+#ifdef WIN32
     HANDLE hStdout=GetStdHandle(STD_OUTPUT_HANDLE); 
     SetConsoleTextAttribute(hStdout,c);
+#else
+	argstream::TSTR<_Elem> s = 
+		argstream::TSTR<_Elem>::ToString("\033[0;") +
+		argstream::TSTR<_Elem>::ToString(itoa(c)) +
+		argstream::TSTR<_Elem>::ToString("m");
+	i << s;
+#endif
     return i;
 }
 
