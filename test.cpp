@@ -1,4 +1,7 @@
+#ifdef WIN32
 #include <Windows.h>
+#endif
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include "argstream.h"
@@ -6,24 +9,40 @@
 using namespace std;
 enum color
 {
-	red=FOREGROUND_RED|FOREGROUND_INTENSITY,
-	green=FOREGROUND_GREEN|FOREGROUND_INTENSITY,
-	blue=FOREGROUND_BLUE|FOREGROUND_INTENSITY,
-	yellow=FOREGROUND_GREEN|FOREGROUND_RED|FOREGROUND_INTENSITY,
-	white=FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE
+#ifdef WIN32
+	red		= FOREGROUND_RED|FOREGROUND_INTENSITY,
+	green	= FOREGROUND_GREEN|FOREGROUND_INTENSITY,
+	blue	= FOREGROUND_BLUE|FOREGROUND_INTENSITY,
+	yellow	= FOREGROUND_GREEN|FOREGROUND_RED|FOREGROUND_INTENSITY,
+	white	= FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE
+#else
+	red		= 31,
+	green	= 32,
+	blue	= 34,
+	yellow	= 33,
+	white	= 0
+#endif
 };
 
 template <class _Elem, class _Traits>
 std::basic_ostream<_Elem,_Traits>& 
 operator<<(std::basic_ostream<_Elem,_Traits>& i, const color& c)
 {
+#ifdef WIN32
     HANDLE hStdout=GetStdHandle(STD_OUTPUT_HANDLE); 
     SetConsoleTextAttribute(hStdout,c);
+#else
+	char tmpStr[10] = {0};
+	sprintf(tmpStr, "%d", c);
+	i << argstream::TSTR<_Elem>::ToString("\033[0;")
+	  << argstream::TSTR<_Elem>::ToString(tmpStr)
+	  << argstream::TSTR<_Elem>::ToString("m");
+#endif
     return i;
 }
 
 template<typename T1, typename T2>
-bool TestEqual(T1& v1, T2& v2, wchar_t* desc)
+bool TestEqual(const T1& v1, const T2& v2, const wchar_t* desc)
 {
 	bool result = (v1 == v2);
 	if (result)
@@ -39,7 +58,7 @@ bool TestEqual(T1& v1, T2& v2, wchar_t* desc)
 }
 // Partial Specialization for float
 template<>
-bool TestEqual(float& v1, float& v2, wchar_t* desc)
+bool TestEqual(const float& v1, const float& v2, const wchar_t* desc)
 {
 	bool result = (v1 - v2) < 0.0001; // 0.1%
 	if (result)
@@ -56,7 +75,7 @@ bool TestEqual(float& v1, float& v2, wchar_t* desc)
 
 // Partial Specialization for double
 template<>
-bool TestEqual(double& v1, double& v2, wchar_t* desc)
+bool TestEqual(const double& v1, const double& v2, const wchar_t* desc)
 {
 	bool result = (v1 - v2) < 0.0001; //0.1%
 	if (result)
@@ -71,12 +90,12 @@ bool TestEqual(double& v1, double& v2, wchar_t* desc)
 	return result;
 }
 
-int wmain()
+int main()
 {
 	bool total_result = true;
 	{ //Test string parameter 1
-		wchar_t* TEST_STR1 = L"StringWithoutSpaces";
-		wchar_t* argv[] = {
+		constexpr wchar_t const* const TEST_STR1 = L"StringWithoutSpaces";
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"-s",
 			TEST_STR1
@@ -93,8 +112,8 @@ int wmain()
 	}
 
 	{ //Test string parameter 2
-		wchar_t* TEST_STR1 = L"String with spaces";
-		wchar_t* argv[] = {
+		constexpr wchar_t const* const TEST_STR1 = L"String with spaces";
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"-s",
 			TEST_STR1
@@ -111,7 +130,7 @@ int wmain()
 	}
 
 	{ //Test string parameter 3
-		wchar_t* TEST_STR1 = L"StringWithoutSpaces";
+		constexpr const wchar_t* TEST_STR1 = L"StringWithoutSpaces";
 		wstring cmdline = wstring(L"test.exe -s ") + wstring(TEST_STR1);
 		wstring testStr;
 		argstream::argstream<wchar_t> as(cmdline.c_str());
@@ -124,8 +143,8 @@ int wmain()
 	}
 
 	{ //Test int parameter
-		int TEST_INT = 1234;
-		wchar_t* argv[] = {
+		const int TEST_INT = 1234;
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"-s",
 			L"1234"
@@ -142,8 +161,8 @@ int wmain()
 	}
 
 	{ //Test float parameter
-		float TEST_FLOAT = 1234.01f;
-		wchar_t* argv[] = {
+		const float TEST_FLOAT = 1234.01f;
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"-s",
 			L"1234.01"
@@ -161,8 +180,8 @@ int wmain()
 	}
 
 	{ //Test double parameter
-		double TEST_FLOAT = 1234.01;
-		wchar_t* argv[] = {
+		const double TEST_FLOAT = 1234.01;
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"-s",
 			L"1234.01"
@@ -180,8 +199,8 @@ int wmain()
 	}
 
 	{ //Test options 1
-		bool TEST_OPT = true;
-		wchar_t* argv[] = {
+		const bool TEST_OPT = true;
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"-s"
 		};
@@ -197,8 +216,8 @@ int wmain()
 	}
 
 	{ //Test options 2
-		bool TEST_OPT = false;
-		wchar_t* argv[] = {
+		const bool TEST_OPT = false;
+		wchar_t const* const argv[] = {
 			L"test.exe"
 		};
 		int argc = sizeof(argv)/sizeof(wchar_t*);
@@ -213,8 +232,8 @@ int wmain()
 	}
 
 	{ //Test unused parameters 1
-		bool TEST_OPT = false;
-		wchar_t* argv[] = {
+		const bool TEST_OPT = false;
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"-s",
 			L"-t"
@@ -230,8 +249,8 @@ int wmain()
 	}
 
 	{ //Test unused parameters 2
-		wchar_t* TEST_STR1 = L"StringWithoutSpaces";
-		wchar_t* argv[] = {
+		const wchar_t* TEST_STR1 = L"StringWithoutSpaces";
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"-s",
 			TEST_STR1,
@@ -249,8 +268,8 @@ int wmain()
 	}
 
 	{ //Test long parameter name
-		wchar_t* TEST_STR1 = L"StringWithoutSpaces";
-		wchar_t* argv[] = {
+		const wchar_t* TEST_STR1 = L"StringWithoutSpaces";
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"--testString",
 			TEST_STR1,
@@ -268,8 +287,8 @@ int wmain()
 	}
 
 	{ //Test long option name
-		bool TEST_OPT = true;
-		wchar_t* argv[] = {
+		constexpr const bool TEST_OPT = true;
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"--testString",
 			L"--test"
@@ -307,8 +326,8 @@ int wmain()
 	*/
 
 	{ //Test help request 1
-		bool TEST_OPT = true;
-		wchar_t* argv[] = {
+		const bool TEST_OPT = true;
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"--testString",
 			L"-h"
@@ -324,8 +343,8 @@ int wmain()
 	}
 
 	{ //Test help request 2
-		bool TEST_OPT = true;
-		wchar_t* argv[] = {
+		const bool TEST_OPT = true;
+		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"-h"
 		};
@@ -341,11 +360,11 @@ int wmain()
 	cout << "---------------------" << endl;
 	if (total_result)
 	{
-		cout << green << "All passed." << endl;
+		cout << green << "All passed." << white << endl;
 	}
 	else
 	{
-		cout << red << "Some tests failed." << endl;
+		cout << red << "Some tests failed." << white << endl;
 	}
 	//cin.get();
 	if (!total_result)
