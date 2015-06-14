@@ -77,9 +77,10 @@ namespace argstream
 	template<typename CHARTYPE, typename T>
     class ValueHolder;
 
+	/*
 	template<typename CHARTYPE, typename T, typename O>
     class ValuesHolder;
-
+	*/
 
 	/**
        Convert UTF-8 string to UTF-16 and vice versa.
@@ -186,10 +187,7 @@ namespace argstream
 	*/
 	template<typename CHARTYPE, typename T>
 	inline argstream<CHARTYPE>&
-	operator>> (
-                argstream<CHARTYPE>& s,
-                const ValueHolder<CHARTYPE, T>& v
-               );
+	operator >> (argstream<CHARTYPE>& s,ValueHolder<CHARTYPE, T> const& v);
 
 	/**
 		Parse the "option - value1 value2 value3" parameters.
@@ -199,12 +197,11 @@ namespace argstream
 
 		@return Reference to the parsed argstream object.
 	*/
+	/*
 	template<typename CHARTYPE, typename T, typename O>
 	inline argstream<CHARTYPE>&
-	operator>> (
-                argstream<CHARTYPE>& s,
-                const ValuesHolder<CHARTYPE, T, O>& v
-               );
+	operator >> (argstream<CHARTYPE>& s, ValuesHolder<CHARTYPE, T, O> const& v);
+	*/
 
 	/**
 		Parse the "option" parameters.
@@ -216,10 +213,7 @@ namespace argstream
 	*/
 	template<typename CHARTYPE>
 	inline argstream<CHARTYPE>&
-	operator>> (
-                argstream<CHARTYPE>& s,
-                const OptionHolder<CHARTYPE>& v
-               );
+	operator >> (argstream<CHARTYPE>& s, OptionHolder<CHARTYPE> const& v);
 
 	/**
 		Add examples section to the help output.
@@ -230,10 +224,8 @@ namespace argstream
 		@return Reference to the argstream object which has added the example.
 	*/
 	template<typename CHARTYPE>
-	argstream<CHARTYPE>& operator>> (
-                                     argstream<CHARTYPE>& s,
-                                     const ExampleHolder<CHARTYPE>& e
-                                    );
+	inline argstream<CHARTYPE>&
+    operator >> (argstream<CHARTYPE>& s, ExampleHolder<CHARTYPE> const& e);
 
 	/**
 		Add copyright section to the help output.
@@ -244,10 +236,8 @@ namespace argstream
 		@return Reference to the argstream object which has added the copyright information.
 	*/
 	template<typename CHARTYPE>
-	argstream<CHARTYPE>& operator>> (
-                                     argstream<CHARTYPE>& s,
-                                     const CopyrightHolder<CHARTYPE>& c
-                                    );
+	inline argstream<CHARTYPE>&
+    operator >> (argstream<CHARTYPE>& s, CopyrightHolder<CHARTYPE> const& c);
 	//--------------------------------------------------------------------------
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -352,7 +342,7 @@ namespace argstream
 			T& b,
 			const CHARTYPE* desc,
 			bool mandatory);
-		friend argstream<CHARTYPE>& operator>><CHARTYPE, T> (argstream<CHARTYPE>& s,const ValueHolder<CHARTYPE, T>& v);
+		friend argstream<CHARTYPE>& operator >><CHARTYPE, T> (argstream<CHARTYPE>& s, ValueHolder<CHARTYPE, T> const& v);
 		friend struct description_policy<CHARTYPE, T>;
 		typename TSTR<CHARTYPE>::type name() const;
 		typename TSTR<CHARTYPE>::type description() const;
@@ -435,7 +425,7 @@ namespace argstream
 	public:
 		inline CopyrightHolder(const CHARTYPE* copyright);
 		inline typename TSTR<CHARTYPE>::type copyright() const;
-		friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s, const CopyrightHolder<CHARTYPE>& e);
+		friend argstream<CHARTYPE>& operator >>(argstream<CHARTYPE>& s, CopyrightHolder<CHARTYPE> const& e);
 	private:
 		typename TSTR<CHARTYPE>::type copyright_;
 	};
@@ -455,7 +445,8 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE>
-	inline argstream<CHARTYPE>&	operator>>(argstream<CHARTYPE>& s,const CopyrightHolder<CHARTYPE>& v)
+	inline argstream<CHARTYPE>&
+    operator >>(argstream<CHARTYPE>& s, CopyrightHolder<CHARTYPE> const& v)
 	{
 		s.copyright_ = v.copyright();
 		return s;
@@ -471,7 +462,7 @@ namespace argstream
 		ExampleHolder(const CHARTYPE* cmdline, const CHARTYPE* desc);
 		typename TSTR<CHARTYPE>::type cmdline() const;
 		typename TSTR<CHARTYPE>::type description() const;
-		friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s, const ExampleHolder<CHARTYPE>& e);
+		friend argstream<CHARTYPE>& operator >>(argstream<CHARTYPE>& s, ExampleHolder<CHARTYPE> const& e);
 	private:
 		typename TSTR<CHARTYPE>::type cmdline_;
 		typename TSTR<CHARTYPE>::type description_;
@@ -487,7 +478,8 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE>
-	typename TSTR<CHARTYPE>::type ExampleHolder<CHARTYPE>::cmdline() const
+	typename TSTR<CHARTYPE>::type
+    ExampleHolder<CHARTYPE>::cmdline() const
 	{
 		return cmdline_;
 	}
@@ -499,7 +491,8 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE>
-	inline argstream<CHARTYPE>&	operator>>(argstream<CHARTYPE>& s,const ExampleHolder<CHARTYPE>& v)
+	inline argstream<CHARTYPE>&
+    operator >> (argstream<CHARTYPE>& s, ExampleHolder<CHARTYPE> const& v)
 	{
 		s.argExamples_.push_back(argstream<CHARTYPE>::example_entry(v.cmdline(), v.description()));
 		return s;
@@ -532,7 +525,7 @@ namespace argstream
 		inline typename TSTR<CHARTYPE>::type name() const;
 		inline typename TSTR<CHARTYPE>::type description() const;
 
-		friend argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const OptionHolder<CHARTYPE>& v);
+		friend argstream<CHARTYPE>& operator >>(argstream<CHARTYPE>& s, OptionHolder<CHARTYPE> const& v);
 		friend OptionHolder<CHARTYPE> help<CHARTYPE>();
 	private:
 		typename TSTR<CHARTYPE>::type shortName_;
@@ -621,7 +614,7 @@ namespace argstream
 		ValuesHolder(const O& o,
 			const CHARTYPE* desc,
 			int len);
-		friend argstream& operator>><CHARTYPE, T, O>(argstream& s, const ValuesHolder<CHARTYPE, T, O>& v);
+		friend argstream& operator >><CHARTYPE, T, O>(argstream& s, ValuesHolder<CHARTYPE, T, O> const& v);
 		typename TSTR<CHARTYPE>::type name() const;
 		typename TSTR<CHARTYPE>::type description() const;
 		typedef T value_type;
@@ -664,7 +657,7 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE, typename T, typename O>
-	argstream<CHARTYPE>& operator>>(argstream<CHARTYPE>& s,const ValuesHolder<CHARTYPE,T,O>& v)
+	argstream<CHARTYPE>& operator >>(argstream<CHARTYPE>& s,ValuesHolder<CHARTYPE,T,O> const& v)
 	{
 		s.argHelps_.push_back(argstream::help_entry(v.name(),v.description()));
 		{
@@ -725,7 +718,7 @@ namespace argstream
 	class ValueParser
 	{
 	public:
-		inline T operator()(const typename TSTR<CHARTYPE>::type& s) const
+		inline T operator ()(const typename TSTR<CHARTYPE>::type& s) const
 		{
 			typename TSTRSTREAM<CHARTYPE>::I is(s);
 			T t;
@@ -739,7 +732,7 @@ namespace argstream
 	{
 	public:
 		inline typename TSTR<CHARTYPE>::type
-		operator()(const typename TSTR<CHARTYPE>::type& s) const
+		operator ()(const typename TSTR<CHARTYPE>::type& s) const
 		{
 			return s;
 		}
@@ -756,26 +749,27 @@ namespace argstream
 		inline argstream<CHARTYPE>(const CHARTYPE* c);
 
 		template<typename T>
-		friend argstream<CHARTYPE>& operator>>(
+		friend argstream<CHARTYPE>& operator >>(
 			argstream<CHARTYPE>& s,
-			const ValueHolder<CHARTYPE, T>& v);
+			ValueHolder<CHARTYPE, T> const& v);
 
-		friend argstream<CHARTYPE>& operator>>(
+		friend argstream<CHARTYPE>& operator >>(
 			argstream<CHARTYPE>& s,
-			const OptionHolder<CHARTYPE>& v);
-
+			OptionHolder<CHARTYPE> const& v);
+		/*
 		template<typename T, typename O>
-		friend argstream<CHARTYPE>& operator>>(
+		friend argstream<CHARTYPE>& ::operator >>(
 			argstream<CHARTYPE>& s,
-			const ValuesHolder<CHARTYPE, T,O>& v);
+			ValuesHolder<CHARTYPE, T,O> const& v);
+		*/
 
-		friend inline argstream<CHARTYPE>& operator>>(
+		friend inline argstream<CHARTYPE>& operator >>(
 			argstream<CHARTYPE>& s,
-			const ExampleHolder<CHARTYPE>& v);
+			ExampleHolder<CHARTYPE> const& v);
 
-		friend inline argstream<CHARTYPE>& operator>>(
+		friend inline argstream<CHARTYPE>& operator >>(
 			argstream<CHARTYPE>& s,
-			const CopyrightHolder<CHARTYPE>& v);
+			CopyrightHolder<CHARTYPE> const& v);
 
 		inline bool helpRequested() const;
 		inline bool isOk() const;
@@ -1109,8 +1103,8 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE, typename T>
-	argstream<CHARTYPE>&
-	operator>>(argstream<CHARTYPE>& s,const ValueHolder<CHARTYPE, T>& v)
+	inline argstream<CHARTYPE>&
+	operator >> (argstream<CHARTYPE>& s, ValueHolder<CHARTYPE, T> const& v)
 	{
 		// Search in the options if there is any such option defined either with a
 		// short name or a long name. If both are found, only the last one is
@@ -1211,8 +1205,8 @@ namespace argstream
 	}
 
 	template<typename CHARTYPE, typename T>
-	argstream<CHARTYPE>&
-	operator>>(argstream<CHARTYPE>& s,const ValueHolder<CHARTYPE, bool>& v)
+	inline argstream<CHARTYPE>&
+	operator >> (argstream<CHARTYPE>& s, ValueHolder<CHARTYPE, bool> const& v)
 	{
 		// Search in the options if there is any such option defined either with a
 		// short name or a long name. If both are found, only the last one is
@@ -1309,7 +1303,7 @@ namespace argstream
 
 	template<typename CHARTYPE>
 	inline argstream<CHARTYPE>&
-	operator>>(argstream<CHARTYPE>& s,const OptionHolder<CHARTYPE>& v)
+	operator >> (argstream<CHARTYPE>& s, OptionHolder<CHARTYPE> const& v)
 	{
 		// Search in the options if there is any such option defined either with a
 		// short name or a long name. If both are found, only the last one is
