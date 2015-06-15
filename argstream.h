@@ -187,7 +187,7 @@ namespace argstream
 	*/
 	template<typename CHARTYPE, typename T>
 	inline argstream<CHARTYPE>&
-	operator >> (argstream<CHARTYPE>& s,ValueHolder<CHARTYPE, T> const& v);
+	operator >>(argstream<CHARTYPE>& s, ValueHolder<CHARTYPE, T> const& v);
 
 	/**
 		Parse the "option - value1 value2 value3" parameters.
@@ -200,7 +200,7 @@ namespace argstream
 	/*
 	template<typename CHARTYPE, typename T, typename O>
 	inline argstream<CHARTYPE>&
-	operator >> (argstream<CHARTYPE>& s, ValuesHolder<CHARTYPE, T, O> const& v);
+	operator >>(argstream<CHARTYPE>& s, ValuesHolder<CHARTYPE, T, O> const& v);
 	*/
 
 	/**
@@ -213,7 +213,7 @@ namespace argstream
 	*/
 	template<typename CHARTYPE>
 	inline argstream<CHARTYPE>&
-	operator >> (argstream<CHARTYPE>& s, OptionHolder<CHARTYPE> const& v);
+	operator >>(argstream<CHARTYPE>& s, OptionHolder<CHARTYPE> const& v);
 
 	/**
 		Add examples section to the help output.
@@ -225,7 +225,7 @@ namespace argstream
 	*/
 	template<typename CHARTYPE>
 	inline argstream<CHARTYPE>&
-    operator >> (argstream<CHARTYPE>& s, ExampleHolder<CHARTYPE> const& e);
+    operator >>(argstream<CHARTYPE>& s, ExampleHolder<CHARTYPE> const& e);
 
 	/**
 		Add copyright section to the help output.
@@ -237,7 +237,7 @@ namespace argstream
 	*/
 	template<typename CHARTYPE>
 	inline argstream<CHARTYPE>&
-    operator >> (argstream<CHARTYPE>& s, CopyrightHolder<CHARTYPE> const& c);
+    operator >>(argstream<CHARTYPE>& s, CopyrightHolder<CHARTYPE> const& c);
 	//--------------------------------------------------------------------------
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -342,8 +342,12 @@ namespace argstream
 			T& b,
 			const CHARTYPE* desc,
 			bool mandatory);
-		friend argstream<CHARTYPE>& operator >><CHARTYPE, T> (argstream<CHARTYPE>& s, ValueHolder<CHARTYPE, T> const& v);
+
+		template<typename C, typename T2>
+		friend argstream<C>& operator>>(argstream<C>& s, ValueHolder<C, T2> const& v);
+
 		friend struct description_policy<CHARTYPE, T>;
+
 		typename TSTR<CHARTYPE>::type name() const;
 		typename TSTR<CHARTYPE>::type description() const;
 	private:
@@ -425,7 +429,9 @@ namespace argstream
 	public:
 		inline CopyrightHolder(const CHARTYPE* copyright);
 		inline typename TSTR<CHARTYPE>::type copyright() const;
-		friend argstream<CHARTYPE>& operator >>(argstream<CHARTYPE>& s, CopyrightHolder<CHARTYPE> const& e);
+
+		template<typename C>
+		friend argstream<C>& operator>>(argstream<C>& s, CopyrightHolder<C> const& e);
 	private:
 		typename TSTR<CHARTYPE>::type copyright_;
 	};
@@ -462,7 +468,8 @@ namespace argstream
 		ExampleHolder(const CHARTYPE* cmdline, const CHARTYPE* desc);
 		typename TSTR<CHARTYPE>::type cmdline() const;
 		typename TSTR<CHARTYPE>::type description() const;
-		friend argstream<CHARTYPE>& operator >>(argstream<CHARTYPE>& s, ExampleHolder<CHARTYPE> const& e);
+		template<typename C>
+		friend argstream<C>& operator>>(argstream<C>& s, ExampleHolder<C> const& e);
 	private:
 		typename TSTR<CHARTYPE>::type cmdline_;
 		typename TSTR<CHARTYPE>::type description_;
@@ -492,7 +499,7 @@ namespace argstream
 
 	template<typename CHARTYPE>
 	inline argstream<CHARTYPE>&
-    operator >> (argstream<CHARTYPE>& s, ExampleHolder<CHARTYPE> const& v)
+    operator >>(argstream<CHARTYPE>& s, ExampleHolder<CHARTYPE> const& v)
 	{
 		s.argExamples_.push_back(argstream<CHARTYPE>::example_entry(v.cmdline(), v.description()));
 		return s;
@@ -525,7 +532,9 @@ namespace argstream
 		inline typename TSTR<CHARTYPE>::type name() const;
 		inline typename TSTR<CHARTYPE>::type description() const;
 
-		friend argstream<CHARTYPE>& operator >>(argstream<CHARTYPE>& s, OptionHolder<CHARTYPE> const& v);
+		template<typename C>
+		friend argstream<C>& operator>>(argstream<C>& s, OptionHolder<C> const& v);
+
 		friend OptionHolder<CHARTYPE> help<CHARTYPE>();
 	private:
 		typename TSTR<CHARTYPE>::type shortName_;
@@ -614,7 +623,9 @@ namespace argstream
 		ValuesHolder(const O& o,
 			const CHARTYPE* desc,
 			int len);
-		friend argstream& operator >><CHARTYPE, T, O>(argstream& s, ValuesHolder<CHARTYPE, T, O> const& v);
+
+		template<typename C, typename T2, typename O2>
+		friend argstream<C>& operator>>(argstream<C>& s, ValuesHolder<C, T2, O2> const& v);
 		typename TSTR<CHARTYPE>::type name() const;
 		typename TSTR<CHARTYPE>::type description() const;
 		typedef T value_type;
@@ -748,28 +759,31 @@ namespace argstream
 		inline argstream<CHARTYPE>(int argc,CHARTYPE const* const argv[]);
 		inline argstream<CHARTYPE>(const CHARTYPE* c);
 
-		template<typename T>
-		friend argstream<CHARTYPE>& operator >>(
-			argstream<CHARTYPE>& s,
-			ValueHolder<CHARTYPE, T> const& v);
-
-		friend argstream<CHARTYPE>& operator >>(
-			argstream<CHARTYPE>& s,
-			OptionHolder<CHARTYPE> const& v);
+		template<typename C, typename T>
+		friend argstream<C>& operator>>(
+			argstream<C>& s,
+			ValueHolder<C, T> const& v);
+	
+		template<typename C>
+		friend argstream<C>& operator>>(
+			argstream<C>& s,
+			OptionHolder<C> const& v);
 		/*
 		template<typename T, typename O>
-		friend argstream<CHARTYPE>& ::operator >>(
+		friend argstream<CHARTYPE>& operator>>(
 			argstream<CHARTYPE>& s,
 			ValuesHolder<CHARTYPE, T,O> const& v);
 		*/
+		
+		template<typename C>
+		friend argstream<C>& operator>>(
+			argstream<C>& s,
+			ExampleHolder<C> const& v);
 
-		friend inline argstream<CHARTYPE>& operator >>(
-			argstream<CHARTYPE>& s,
-			ExampleHolder<CHARTYPE> const& v);
-
-		friend inline argstream<CHARTYPE>& operator >>(
-			argstream<CHARTYPE>& s,
-			CopyrightHolder<CHARTYPE> const& v);
+		template<typename C>
+		friend argstream<C>& operator>>(
+			argstream<C>& s,
+			CopyrightHolder<C> const& v);
 
 		inline bool helpRequested() const;
 		inline bool isOk() const;
@@ -1104,7 +1118,7 @@ namespace argstream
 
 	template<typename CHARTYPE, typename T>
 	inline argstream<CHARTYPE>&
-	operator >> (argstream<CHARTYPE>& s, ValueHolder<CHARTYPE, T> const& v)
+	operator >>(argstream<CHARTYPE>& s, ValueHolder<CHARTYPE, T> const& v)
 	{
 		// Search in the options if there is any such option defined either with a
 		// short name or a long name. If both are found, only the last one is
@@ -1113,7 +1127,8 @@ namespace argstream
 		TSTRSTREAM<CHARTYPE>::COUT << TSTR<CHARTYPE>::ToString("DEBUG: searching ")
 			<< v.shortName_<<L" "<<v.longName_<<std::endl;
 #endif
-		s.argHelps_.push_back(argstream<CHARTYPE>::help_entry(v.name(),v.description()));
+		typename argstream<CHARTYPE>::help_entry entry(v.name(), v.description());
+		s.argHelps_.push_back(entry);
 		if (v.mandatory_)
 		{
 			if (!v.shortName_.empty())
@@ -1206,7 +1221,7 @@ namespace argstream
 
 	template<typename CHARTYPE, typename T>
 	inline argstream<CHARTYPE>&
-	operator >> (argstream<CHARTYPE>& s, ValueHolder<CHARTYPE, bool> const& v)
+	operator >>(argstream<CHARTYPE>& s, ValueHolder<CHARTYPE, bool> const& v)
 	{
 		// Search in the options if there is any such option defined either with a
 		// short name or a long name. If both are found, only the last one is
@@ -1303,7 +1318,7 @@ namespace argstream
 
 	template<typename CHARTYPE>
 	inline argstream<CHARTYPE>&
-	operator >> (argstream<CHARTYPE>& s, OptionHolder<CHARTYPE> const& v)
+	operator >>(argstream<CHARTYPE>& s, OptionHolder<CHARTYPE> const& v)
 	{
 		// Search in the options if there is any such option defined either with a
 		// short name or a long name. If both are found, only the last one is
@@ -1312,7 +1327,8 @@ namespace argstream
 		TSTRSTREAM<CHARTYPE>::COUT << TSTR<CHARTYPE>::ToString("DEBUG: found value ")
 			<< v.shortName_<<L" "<<v.longName_<<std::endl;
 #endif
-		s.argHelps_.push_back(argstream<CHARTYPE>::help_entry(v.name(),v.description()));
+		typename argstream<CHARTYPE>::help_entry entry(v.name(), v.description());
+		s.argHelps_.push_back(entry);
 		{
 			typename TSTR<CHARTYPE>::type c;
 			if (!v.shortName_.empty())

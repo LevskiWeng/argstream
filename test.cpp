@@ -31,10 +31,30 @@ operator<<(std::basic_ostream<_Elem,_Traits>& i, const color& c)
     HANDLE hStdout=GetStdHandle(STD_OUTPUT_HANDLE); 
     SetConsoleTextAttribute(hStdout,c);
 #else
-    
+	switch (c)
+	{
+	case red:
+		i << argstream::TSTR<_Elem>::ToString("\033[0;31m");
+		break;
+	case green:
+		i << argstream::TSTR<_Elem>::ToString("\033[0;32m");
+		break;
+	case blue:
+		i << argstream::TSTR<_Elem>::ToString("\033[0;34m");
+		break;
+	case yellow:
+		i << argstream::TSTR<_Elem>::ToString("\033[0;33m");
+		break;
+	case white:
+	default:
+		i << argstream::TSTR<_Elem>::ToString("\033[0;0m");
+		break;
+	}
+	/*
 	i << argstream::TSTR<_Elem>::ToString("\033[0;")
       << c
       << argstream::TSTR<_Elem>::ToString("m");
+	*/
 #endif
     return i;
 }
