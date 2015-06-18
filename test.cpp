@@ -112,7 +112,7 @@ int main()
 {
 	bool total_result = true;
 	{ //Test string parameter 1
-		constexpr wchar_t const* const TEST_STR1 = L"StringWithoutSpaces";
+		wchar_t const* const TEST_STR1 = L"StringWithoutSpaces";
 		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"-s",
@@ -130,7 +130,7 @@ int main()
 	}
 
 	{ //Test string parameter 2
-		constexpr wchar_t const* const TEST_STR1 = L"String with spaces";
+		wchar_t const* const TEST_STR1 = L"String with spaces";
 		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"-s",
@@ -148,7 +148,7 @@ int main()
 	}
 
 	{ //Test string parameter 3
-		constexpr const wchar_t* TEST_STR1 = L"StringWithoutSpaces";
+		const wchar_t* TEST_STR1 = L"StringWithoutSpaces";
 		wstring cmdline = wstring(L"test.exe -s ") + wstring(TEST_STR1);
 		wstring testStr;
 		argstream::argstream<wchar_t> as(cmdline.c_str());
@@ -305,7 +305,7 @@ int main()
 	}
 
 	{ //Test long option name
-		constexpr const bool TEST_OPT = true;
+		const bool TEST_OPT = true;
 		wchar_t const* const argv[] = {
 			L"test.exe",
 			L"--testString",
